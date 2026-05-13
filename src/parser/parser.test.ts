@@ -1,0 +1,437 @@
+import {
+  type AssignmentNode,
+  type ArrayLiteralNode,
+  type AstNode,
+  type CallNode,
+  type FunctionNode,
+  type IdentifierNode,
+  type LetStatement,
+  type MatchNode,
+  type NumberNode,
+  type OperatorNode,
+  type ParseError,
+  type ParseResult,
+  type StringNode,
+  type StructLiteralNode,
+  GroupNode,
+} from './ast'
+import type { Position } from './lexer'
+import { parse } from './parser'
+
+// pretty print error
+function pp(p: ParseResult, tokens = false) {
+  console.log(
+    JSON.stringify(tokens ? p : { ast: p.ast, errors: p.errors }, undefined, 2),
+  )
+}
+
+function passes(str: string | string[], nodeLength: number = 1): ParseResult {
+  const p = parse(Array.isArray(str) ? str.join('\n') : str)
+  expect(p.errors).toHaveLength(0)
+  expect(p.ast).toHaveLength(nodeLength)
+  return p
+}
+
+function errors(
+  str: string | string[],
+  errorLength: number = 1,
+  astLength = 0,
+): ParseResult {
+  const p = parse(Array.isArray(str) ? str.join('\n') : str)
+  expect(p.errors).toHaveLength(errorLength)
+  expect(p.ast).toHaveLength(astLength)
+  return p
+}
+
+function node<T extends AstNode>(
+  _node: AstNode,
+  type: T['type'],
+  start: number | Position,
+  end: number | Position,
+  data?: Partial<T>,
+) {
+  const node = _node as T
+
+  expect(node).toBeDefined()
+  expect(node.type).toBe(type)
+  if (typeof start === 'number') {
+    expect(node.range.start.character).toBe(start)
+  } else {
+    expect(node.range.start.character).toBe(start.character)
+    expect(node.range.start.line).toBe(start.line)
+  }
+  if (typeof end === 'number') {
+    expect(node.range.end.character).toBe(end)
+  } else {
+    expect(node.range.end.character).toBe(end.character)
+    expect(node.range.end.line).toBe(end.line)
+  }
+  if (data) {
+    for (const [key, value] of Object.entries(data)) {
+      expect(node[key as keyof T]).toBe(value)
+    }
+  }
+
+  return node
+}
+
+function error(
+  error: ParseError,
+  start: number | Position,
+  end: number | Position,
+) {
+  if (typeof start === 'number') {
+    expect(error.range.start.character).toBe(start)
+  } else {
+    expect(error.range.start.character).toBe(start.character)
+    expect(error.range.start.line).toBe(start.line)
+  }
+  if (typeof end === 'number') {
+    expect(error.range.end.character).toBe(end)
+  } else {
+    expect(error.range.end.character).toBe(end.character)
+    expect(error.range.end.line).toBe(end.line)
+  }
+}
+
+// MARK: let
+describe('let statements', () => {
+  it('without value', () => {
+    const res = passes('let x')
+
+    const letStatement = node<LetStatement>(res.ast[0], 'LetStatement', 0, 5)
+    node<IdentifierNode>(letStatement.identifier, 'Identifier', 4, 5, {
+      name: 'x',
+    })
+  })
+
+  it('with value', () => {
+    const res = passes('let x = 123')
+    const letStatement = node<LetStatement>(res.ast[0], 'LetStatement', 0, 11)
+    node<IdentifierNode>(letStatement.identifier, 'Identifier', 4, 5, {
+      name: 'x',
+    })
+    node(letStatement.value!, 'Number', 8, 11, {
+      value: '123',
+    })
+  })
+
+  it('with accessor', () => {
+    const res = errors('let a.b', 1, 2)
+
+    const letStatement = node<LetStatement>(res.ast[0], 'LetStatement', 0, 5)
+    node<IdentifierNode>(letStatement.identifier, 'Identifier', 4, 5, {
+      name: 'a',
+    })
+    node<IdentifierNode>(res.ast[1], 'Identifier', 6, 7, {
+      name: 'b',
+    })
+  })
+
+  it('with invalid value', () => {
+    const res = errors('let x = ()')
+    error(res.errors[0], 9, 10)
+  })
+
+  it('with another invalid identifier', () => {
+    const res = errors('let 123')
+    error(res.errors[0], 4, 7)
+  })
+})
+
+// MARK: terminal
+describe('terminal expression', () => {
+  it('numbers', () => {
+    const res = passes('123 0b011 0xF14a', 3)
+    node<NumberNode>(res.ast[0], 'Number', 0, 3, { value: '123' })
+    node<NumberNode>(res.ast[1], 'Number', 4, 9, { value: '0b011' })
+    node<NumberNode>(res.ast[2], 'Number', 10, 16, { value: '0xF14a' })
+  })
+  it('color code', () => {
+    const res = passes('#fff')
+    node<NumberNode>(res.ast[0], 'Number', 0, 4, { value: '#fff' })
+  })
+  it('string', () => {
+    const res = passes('"str"')
+    node<StringNode>(res.ast[0], 'String', 0, 5, { value: '"str"' })
+  })
+  it('at string', () => {
+    const res = passes('@"str"')
+    node<StringNode>(res.ast[0], 'String', 0, 6, { value: '@"str"' })
+  })
+  it('character', () => {
+    const res = passes("'c'")
+    node<NumberNode>(res.ast[0], 'Number', 0, 3, { value: "'c'" })
+  })
+  it('identifier', () => {
+    const res = passes('my_var')
+    node<IdentifierNode>(res.ast[0], 'Identifier', 0, 6, { name: 'my_var' })
+  })
+  it('keyword', () => {
+    const res = passes('true false undefined NaN infinity global self other', 8)
+    const ast = res.ast
+    node<NumberNode>(ast[0], 'Number', 0, 4, { value: 'true' })
+    node<NumberNode>(ast[1], 'Number', 5, 10, { value: 'false' })
+    node<NumberNode>(ast[2], 'Number', 11, 20, { value: 'undefined' })
+    node<NumberNode>(ast[3], 'Number', 21, 24, { value: 'NaN' })
+    node<NumberNode>(ast[4], 'Number', 25, 33, { value: 'infinity' })
+    node<IdentifierNode>(ast[5], 'Identifier', 34, 40, { name: 'global' })
+    node<IdentifierNode>(ast[6], 'Identifier', 41, 45, { name: 'self' })
+    node<IdentifierNode>(ast[7], 'Identifier', 46, 51, { name: 'other' })
+  })
+})
+
+// MARK: group
+describe('group', () => {
+  it('operation priority', () => {
+    const res = passes('(1+2)*3')
+    const op = node<OperatorNode>(res.ast[0], 'Operator', 0, 7, {
+      operation: '*',
+    })
+    const group = node<GroupNode>(op.left, 'Group', 0, 5)
+    const op2 = node<OperatorNode>(group.inside, 'Operator', 1, 4, {
+      operation: '+',
+    })
+    node<NumberNode>(op2.left, 'Number', 1, 2, { value: '1' })
+    node<NumberNode>(op2.right, 'Number', 3, 4, { value: '2' })
+    node<NumberNode>(op.right, 'Number', 6, 7, { value: '3' })
+  })
+
+  it('empty group', () => {
+    const res = errors('()')
+    error(res.errors[0], 1, 2)
+  })
+
+  it('group extends identifier token size', () => {
+    const res = passes('( my_var )')
+    const identifier = node<GroupNode>(res.ast[0], 'Group', 0, 10)
+    node<IdentifierNode>(identifier.inside, 'Identifier', 2, 8, {
+      name: 'my_var',
+    })
+  })
+})
+
+// MARK: array literal
+describe('array literal', () => {
+  it('empty', () => {
+    const res = passes('[]')
+    const ar = node<ArrayLiteralNode>(res.ast[0], 'ArrayLiteral', 0, 2)
+    expect(ar.values).toHaveLength(0)
+  })
+  it('with commas', () => {
+    const res = passes('[1, 2]')
+    const ar = node<ArrayLiteralNode>(res.ast[0], 'ArrayLiteral', 0, 6)
+    expect(ar.values).toHaveLength(2)
+    node<NumberNode>(ar.values[0], 'Number', 1, 2, { value: '1' })
+    node<NumberNode>(ar.values[1], 'Number', 4, 5, { value: '2' })
+  })
+  it('with trailing comma', () => {
+    const res = passes('[1 2,]')
+    const ar = node<ArrayLiteralNode>(res.ast[0], 'ArrayLiteral', 0, 6)
+    expect(ar.values).toHaveLength(2)
+    node<NumberNode>(ar.values[0], 'Number', 1, 2, { value: '1' })
+    node<NumberNode>(ar.values[1], 'Number', 3, 4, { value: '2' })
+  })
+  it('without commas', () => {
+    const res = passes('[1  2]')
+    const ar = node<ArrayLiteralNode>(res.ast[0], 'ArrayLiteral', 0, 6)
+    expect(ar.values).toHaveLength(2)
+    node<NumberNode>(ar.values[0], 'Number', 1, 2, { value: '1' })
+    node<NumberNode>(ar.values[1], 'Number', 4, 5, { value: '2' })
+  })
+})
+
+// MARK: struct literal
+describe('struct literal', () => {
+  it('empty', () => {
+    const res = passes('{}')
+    const struct = node<StructLiteralNode>(res.ast[0], 'StructLiteral', 0, 2)
+    expect(struct.entries).toHaveLength(0)
+  })
+
+  it('terminal key', () => {
+    const res = passes('{ my_var: 123 }')
+    const struct = node<StructLiteralNode>(res.ast[0], 'StructLiteral', 0, 15)
+    expect(struct.entries).toHaveLength(1)
+    const entry = struct.entries[0]
+    node<IdentifierNode>(entry.key, 'Identifier', 2, 8, { name: 'my_var' })
+    node<NumberNode>(entry.value!, 'Number', 10, 13, { value: '123' })
+  })
+
+  it('expression key', () => {
+    const res = passes('{ [123]: 456 }')
+    const struct = node<StructLiteralNode>(res.ast[0], 'StructLiteral', 0, 14)
+    expect(struct.entries).toHaveLength(1)
+    const entry = struct.entries[0]
+    node<NumberNode>(entry.key, 'Number', 3, 6, { value: '123' })
+    node<NumberNode>(entry.value!, 'Number', 9, 12, { value: '456' })
+  })
+
+  it('only identifier', () => {
+    const res = passes('{ name }')
+    const struct = node<StructLiteralNode>(res.ast[0], 'StructLiteral', 0, 8)
+    expect(struct.entries).toHaveLength(1)
+    const entry = struct.entries[0]
+    node<IdentifierNode>(entry.key, 'Identifier', 2, 6, { name: 'name' })
+    expect(entry.value).toBeNull()
+  })
+
+  it('with commas', () => {
+    const res = passes('{ a, b }')
+    const struct = node<StructLiteralNode>(res.ast[0], 'StructLiteral', 0, 8)
+    expect(struct.entries).toHaveLength(2)
+    const entry1 = struct.entries[0]
+    node<IdentifierNode>(entry1.key, 'Identifier', 2, 3, { name: 'a' })
+    expect(entry1.value).toBeNull()
+    const entry2 = struct.entries[1]
+    node<IdentifierNode>(entry2.key, 'Identifier', 5, 6, { name: 'b' })
+    expect(entry2.value).toBeNull()
+  })
+
+  it('with trailing comma', () => {
+    const res = passes('{ a b, }')
+    const struct = node<StructLiteralNode>(res.ast[0], 'StructLiteral', 0, 8)
+    expect(struct.entries).toHaveLength(2)
+    const entry1 = struct.entries[0]
+    node<IdentifierNode>(entry1.key, 'Identifier', 2, 3, { name: 'a' })
+    expect(entry1.value).toBeNull()
+    const entry2 = struct.entries[1]
+    node<IdentifierNode>(entry2.key, 'Identifier', 4, 5, { name: 'b' })
+    expect(entry2.value).toBeNull()
+  })
+
+  it('without comma', () => {
+    const res = passes('{ a b  }')
+    const struct = node<StructLiteralNode>(res.ast[0], 'StructLiteral', 0, 8)
+    expect(struct.entries).toHaveLength(2)
+    const entry1 = struct.entries[0]
+    node<IdentifierNode>(entry1.key, 'Identifier', 2, 3, { name: 'a' })
+    expect(entry1.value).toBeNull()
+    const entry2 = struct.entries[1]
+    node<IdentifierNode>(entry2.key, 'Identifier', 4, 5, { name: 'b' })
+    expect(entry2.value).toBeNull()
+  })
+})
+
+// MARK: call
+describe('call', () => {
+  it('normal', () => {
+    const res = passes('a()')
+    const call = node<CallNode>(res.ast[0], 'Call', 0, 3)
+    expect(call.arguments).toHaveLength(0)
+    node<IdentifierNode>(call.fun, 'Identifier', 0, 1, {
+      name: 'a',
+    })
+  })
+
+  it('with trailing comma', () => {
+    const res = passes('a(1,2,)')
+    const call = node<CallNode>(res.ast[0], 'Call', 0, 7)
+    expect(call.arguments).toHaveLength(2)
+    node<IdentifierNode>(call.fun, 'Identifier', 0, 1, {
+      name: 'a',
+    })
+    node<NumberNode>(call.arguments![0], 'Number', 2, 3, {
+      value: '1',
+    })
+    node<NumberNode>(call.arguments![1], 'Number', 4, 5, {
+      value: '2',
+    })
+  })
+
+  it('without comma', () => {
+    const res = passes('a(1 2 )')
+    const call = node<CallNode>(res.ast[0], 'Call', 0, 7)
+    expect(call.arguments).toHaveLength(2)
+    node<IdentifierNode>(call.fun, 'Identifier', 0, 1, {
+      name: 'a',
+    })
+    node<NumberNode>(call.arguments![0], 'Number', 2, 3, {
+      value: '1',
+    })
+    node<NumberNode>(call.arguments![1], 'Number', 4, 5, {
+      value: '2',
+    })
+  })
+})
+
+// MARK: fun
+describe('function expression', () => {
+  it('normal', () => {
+    const res = passes('fun (a, b) { 123 }')
+    const n = node<FunctionNode>(res.ast[0], 'Function', 0, 18)
+    expect(n.arguments).toHaveLength(2)
+    node<IdentifierNode>(n.arguments[0], 'Identifier', 5, 6, { name: 'a' })
+    node<IdentifierNode>(n.arguments[1], 'Identifier', 8, 9, { name: 'b' })
+    expect(n.block).toHaveLength(1)
+    node<NumberNode>(n.block[0], 'Number', 13, 16, { value: '123' })
+  })
+
+  it('no arg commas', () => {
+    const res = passes('fun (a b) { 123 }')
+    const n = node<FunctionNode>(res.ast[0], 'Function', 0, 17)
+    expect(n.arguments).toHaveLength(2)
+    node<IdentifierNode>(n.arguments[0], 'Identifier', 5, 6, { name: 'a' })
+    node<IdentifierNode>(n.arguments[1], 'Identifier', 7, 8, { name: 'b' })
+    expect(n.block).toHaveLength(1)
+    node<NumberNode>(n.block[0], 'Number', 12, 15, { value: '123' })
+  })
+
+  it('no args, no body', () => {
+    const res = passes('fun () { }')
+    const n = node<FunctionNode>(res.ast[0], 'Function', 0, 10)
+    expect(n.arguments).toHaveLength(0)
+    expect(n.block).toHaveLength(0)
+  })
+
+  it('no args, no body, no parenthesis', () => {
+    const res = passes('fun { }')
+    const n = node<FunctionNode>(res.ast[0], 'Function', 0, 7)
+    expect(n.arguments).toHaveLength(0)
+    expect(n.block).toHaveLength(0)
+  })
+
+  it('no args', () => {
+    const res = passes('fun { 123 }')
+    const n = node<FunctionNode>(res.ast[0], 'Function', 0, 11)
+    expect(n.arguments).toHaveLength(0)
+    expect(n.block).toHaveLength(1)
+    node<NumberNode>(n.block[0], 'Number', 6, 9, { value: '123' })
+  })
+})
+
+describe('assignment', () => {
+  it('normal', () => {
+    const res = passes('a = b')
+    const n = node<AssignmentNode>(res.ast[0], 'Assignment', 0, 5)
+    node<IdentifierNode>(n.identifier, 'Identifier', 0, 1, { name: 'a' })
+    node<IdentifierNode>(n.value, 'Identifier', 4, 5, { name: 'b' })
+  })
+})
+
+describe('match', () => {
+  it('normal', () => {
+    const res = passes('match a{case 1{b}case 2{c}else{d}}')
+    const n = node<MatchNode>(res.ast[0], 'Match', 0, 34)
+    node<IdentifierNode>(n.condition, 'Identifier', 6, 7, { name: 'a' })
+    expect(n.cases).toHaveLength(3)
+    // case 1
+    node<NumberNode>(n.cases[0].case!, 'Number', 13, 14, { value: '1' })
+    expect(n.cases[0].block).toHaveLength(1)
+    node<IdentifierNode>(n.cases[0].block[0], 'Identifier', 15, 16, {
+      name: 'b',
+    })
+    // case 2
+    node<NumberNode>(n.cases[1].case!, 'Number', 22, 23, { value: '2' })
+    expect(n.cases[1].block).toHaveLength(1)
+    node<IdentifierNode>(n.cases[1].block[0], 'Identifier', 24, 25, {
+      name: 'c',
+    })
+    // else
+    expect(n.cases[2].case).toBeNull()
+    expect(n.cases[2].block).toHaveLength(1)
+    node<IdentifierNode>(n.cases[2].block[0], 'Identifier', 31, 32, {
+      name: 'd',
+    })
+  })
+})

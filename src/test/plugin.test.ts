@@ -1,0 +1,313 @@
+import { format, Options } from 'prettier'
+import * as CatspeakPlugin from '..'
+import { CommaMode } from '../options'
+
+// a long identifier to ensure the line wraps
+const long =
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
+function test(raw: string, formatted: string, options?: Options) {
+  const expected = formatted ? formatted + '\n' : formatted
+
+  return async () => {
+    const form1 = await format(raw.replaceAll('long', long), {
+      ...options,
+      plugins: [CatspeakPlugin],
+      parser: 'catspeak',
+      useTabs: true,
+    })
+    const formNormal = form1.replaceAll(long, 'long')
+    expect(formNormal).toBe(expected)
+
+    // run formatter again to ensure tokenization doesn't get messed up
+    const form2 = await format(form1, {
+      ...options,
+      plugins: [CatspeakPlugin],
+      parser: 'catspeak',
+      useTabs: true,
+    })
+    const formNormal2 = form2.replaceAll(long, 'long')
+    expect(formNormal2).toBe(expected)
+  }
+}
+
+// MARK: group
+describe('group', () => {
+  it('grouped in precedence', test('(a*c)+b', '(a * c) + b'))
+  it('grouped out of precedence', test('a*(c+b)', 'a * (c + b)'))
+  it('long inside', test('(\n\tlong)', '(\n\t\tlong\n)'))
+  it(
+    'long inside, comment inside',
+    test('(\n--\nlong)', '(\n\t\t--\n\t\tlong\n)'),
+  )
+  it(
+    'long inside, comment outside',
+    test('--\n(\n\t\tlong)', '--\n(\n\t\tlong\n)'),
+  )
+})
+
+// MARK: let
+describe('let statement', () => {
+  it('simple', test('let a\n=\nb', 'let a = b'))
+  it('no value', test('let\na', 'let a'))
+  it('long identifier, no value', test('let\nlong', 'let long'))
+  it('long identifier', test('let long=a', 'let long =\n\t\ta'))
+  it('long value', test('let a=long', 'let a =\n\t\tlong'))
+  it('double long', test('let long=long', 'let long =\n\t\tlong'))
+})
+
+// MARK: root
+describe('root statement', () => {
+  it('simple', test('let a let long', 'let a\nlet long'))
+  it(
+    'required semicolon for array literal',
+    test('let a    \n;[a]', 'let a;\n[a]'),
+  )
+  it('required semicolon for return', test('return\n;b', 'return;\nb'))
+  it('required semicolon for break', test('break\n;b', 'break;\nb'))
+})
+
+// MARK: accessor
+describe('accessor', () => {
+  it('simple', test('a         [\nb\n]', 'a[b]'))
+  it('long key', test('a   [\nlong]', 'a[\n\t\tlong\n]'))
+  it('long array', test('long   [\na]', 'long[\n\t\ta\n]'))
+  it('long array and key', test('long   [\nlong]', 'long[\n\t\tlong\n]'))
+})
+
+// MARK: array literal
+describe('array literal', () => {
+  it('simple', test('[    a b]', '[a, b]'))
+  it('long', test('[    long b]', '[\n\tlong,\n\tb,\n]'))
+  it('empty', test('[\n]', '[]'))
+  // options tests
+  it(
+    'short no commas',
+    test('[   long a]', '[\n\tlong\n\ta\n]', { commaMode: CommaMode.NONE }),
+  )
+  it(
+    'short no commas but required comma',
+    test('[   long, [a]\n,]', '[\n\tlong,\n\t[a]\n]', {
+      commaMode: CommaMode.NONE,
+    }),
+  )
+  it(
+    'short no commas but required comma on a single line',
+    test('[   a, [a]\n,]', '[a, [a]]', {
+      commaMode: CommaMode.NONE,
+    }),
+  )
+  it(
+    'normal on a single line',
+    test('[   a,b\n,]', '[a, b]', {
+      commaMode: CommaMode.NORMAL,
+    }),
+  )
+  it(
+    'normal on a wrapped line',
+    test('[   a,long\n,]', '[\n\ta,\n\tlong\n]', {
+      commaMode: CommaMode.NORMAL,
+    }),
+  )
+})
+
+// MARK: assignment
+describe('assignment', () => {
+  it('simple', test('x=a', 'x = a'))
+  it('long identifier', test('long=a', 'long\n\t=\n\ta'))
+  it('long value', test('a=long', 'a\n\t=\n\tlong'))
+  // it(
+  //   'comments',
+  //   test('--\na--\n\n=--\nb--\n--', '--\na --\n--\n\t=\n\tb --\n--'),
+  // )
+  it('comments', test('--\na=b--\n--', '--\na = b --\n--'))
+})
+
+// MARK: call
+describe('call', () => {
+  it('simple', test('f(a,b)', 'f(a, b)'))
+  it('long name', test('long   (a,b)', 'long(\n\t\ta,\n\t\tb,\n)'))
+  it('long arguments', test('a   (a,long)', 'a(\n\t\ta,\n\t\tlong,\n)'))
+  it('no arguments', test('a\n(\n)', 'a()'))
+  it('long name, no arguments', test('long\n(\n)', 'long()'))
+  it('long name, new, no arguments', test('new long\n(\n)', 'new long()'))
+})
+
+// MARK: do
+describe('do', () => {
+  it('simple', test('do{a}', 'do { a }'))
+  it('long block', test('do{long}', 'do {\n\tlong\n}'))
+  it('empty block', test('do{}', 'do { }'))
+  it('comments', test('--\ndo--\n{a--\n}', '--\ndo {\n\t--\n\ta --\n}'))
+})
+
+// MARK: fun
+describe('fun', () => {
+  it('simple', test('fun(a,b) {c}', 'fun (a, b) { c }'))
+  it('long block', test('fun(a,b) {long}', 'fun (a, b) {\n\tlong\n}'))
+  it('long args', test('fun(long) {a}', 'fun (\n\t\tlong,\n) {\n\ta\n}'))
+  it(
+    'long args and long block',
+    test('fun(long) {long}', 'fun (\n\t\tlong,\n) {\n\tlong\n}'),
+  )
+  it('empty function block', test('fun{}', 'fun () { }'))
+  // options
+  it('empty function arguments', test('fun {}', 'fun () { }'))
+})
+
+// MARK: if
+describe('if', () => {
+  describe('no else', () => {
+    it('simple', test('if a{}', 'if a { }'))
+    it('long condition', test('if long{}', 'if\n\t\tlong\n{ }'))
+    it('long body', test('if a{long}', 'if a {\n\tlong\n}'))
+    it(
+      'long body and condition',
+      test('if long{long}', 'if\n\t\tlong\n{\n\tlong\n}'),
+    )
+  })
+  describe('normal else', () => {
+    // 0 0 0
+    it('simple', test('if a{}else{}', 'if a { } else { }'))
+    // 0 0 1
+    it('long else', test('if a{}else{long}', 'if a { } else {\n\tlong\n}'))
+    // 0 1 0
+    it('long if', test('if a{long}else{}', 'if a {\n\tlong\n} else { }'))
+    // 0 1 1
+    it(
+      'long if, long else',
+      test('if a{long}else{long}', 'if a {\n\tlong\n} else {\n\tlong\n}'),
+    )
+    // 1 0 0
+    it('long condition', test('if long{}else{}', 'if\n\t\tlong\n{ } else { }'))
+    // 1 0 1
+    it(
+      'long condition, long else',
+      test('if long{}else{long}', 'if\n\t\tlong\n{ } else {\n\tlong\n}'),
+    )
+    // 1 1 0
+    it(
+      'long condition, long else',
+      test('if long{long}else{}', 'if\n\t\tlong\n{\n\tlong\n} else { }'),
+    )
+    // 1 1 1
+    it(
+      'all long',
+      test(
+        'if long{long}else{long}',
+        'if\n\t\tlong\n{\n\tlong\n} else {\n\tlong\n}',
+      ),
+    )
+  })
+  describe('else if', () => {
+    it(
+      'simple',
+      test(
+        'if a{b}else if c{d}else{e}',
+        'if a { b } else if c { d } else { e }',
+      ),
+    )
+    it(
+      'wrapped elseif condition',
+      test(
+        'if a{\n\nb}else if long{d}else{e}',
+        'if a { b } else if\n\t\tlong\n{ d } else { e }',
+      ),
+    )
+    it(
+      'elseif stays on one line',
+      test(
+        'if a{\n\nlong}else if long{d}else{e}',
+        'if a {\n\tlong\n} else if\n\t\tlong\n{ d } else { e }',
+      ),
+    )
+  })
+})
+
+// MARK: match
+describe('match', () => {
+  it(
+    'simple',
+    test(
+      'match a{case 1{long}case 2{long}else{long}}',
+      // '',
+      'match a {\n\tcase 1 {\n\t\tlong\n\t}\n\tcase 2 {\n\t\tlong\n\t}\n\telse {\n\t\tlong\n\t}\n}',
+    ),
+  )
+  it(
+    'one line',
+    test('match a{case a{1}else{2}}', 'match a { case a { 1 } else { 2 } }'),
+  )
+  it(
+    'wrapped cases',
+    test(
+      'match a{case a{}case a{1}case a{1}case a{1}case a{1}case a{1}else{}}',
+      'match a {\n\tcase a { }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\telse { }\n}',
+    ),
+  )
+  it('empty', test('match a{}', 'match a { }'))
+})
+
+// MARK: operator
+describe('operator', () => {
+  it('simple', test('a+b*c', 'a + b * c'))
+  it('a + long', test('a+long', 'a\n\t\t+ long'))
+})
+
+// MARK: struct literal
+describe('struct literal', () => {
+  it('empty', test('{\n\t}', '{}'))
+  it('no value', test('{\n\ta\n}', '{ a }'))
+  it('key-value', test('{a:b}', '{ a: b }'))
+  it('long key', test('{long:a}', '{\n\tlong:\n\t\ta,\n}'))
+  it('long value', test('{a:long}', '{\n\ta:\n\t\tlong,\n}'))
+  it('long key value', test('{long:long}', '{\n\tlong:\n\t\tlong,\n}'))
+  it('expression key', test('{["a"]:b}', '{ "a": b }'))
+  it(
+    'long expression key',
+    test('{[long()]:b}', '{\n\t[\n\t\t\tlong()\n\t]:\n\t\tb,\n}'),
+  )
+  // comma between keys
+  it(
+    'no comma with expression key',
+    test('{a,[if true{}]:b}', '{ a, [if true { }]: b }', {
+      commaMode: CommaMode.NONE,
+    }),
+  )
+})
+
+// MARK: unary
+describe('unary', () => {
+  it('normal', test('!\n\nlong', '!long'))
+  it('with assignment', test('let long=!long', 'let long =\n\t\t!long'))
+})
+
+// MARK: while
+describe('while', () => {
+  it('empty', test('while a{}', 'while a { }'))
+  it('simple block', test('while a{b}', 'while a { b }'))
+  it('long block', test('while a{long}', 'while a {\n\tlong\n}'))
+  it('long condition', test('while long{}', 'while\n\t\tlong\n{ }'))
+  it(
+    'long condition, long body',
+    test('while long{long}', 'while\n\t\tlong\n{\n\tlong\n}'),
+  )
+})
+
+// MARK: with
+describe('with', () => {
+  it('empty', test('with a{}', 'with a { }'))
+  it('simple block', test('with a{b}', 'with a { b }'))
+  it('long block', test('with a{long}', 'with a {\n\tlong\n}'))
+  it('long condition', test('with long{}', 'with\n\t\tlong\n{ }'))
+  it(
+    'long condition, long body',
+    test('with long{long}', 'with\n\t\tlong\n{\n\tlong\n}'),
+  )
+})
+
+describe('empty tests', () => {
+  it('empty string', test('', ''))
+  it('only whitespace', test('\n\n\n\n\n\n\n\n\n', ''))
+  it('one comment', test('--hello', '--hello'))
+})
