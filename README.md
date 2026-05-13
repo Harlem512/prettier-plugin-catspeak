@@ -23,7 +23,7 @@ Changes how commas are handled. `normal` prints non-trailing commas, `trailing` 
 -- Normal
 [ a, b ]
 [
-  long,
+  long
 ]
 
 -- trailing
@@ -44,11 +44,11 @@ Changes how semicolons are handled. `required` prints only semicolons required t
 ```catspeak
 -- required
 let foo = bar;
-(a)
+(baz)
 
 -- all
 let foo = bar;
-(a);
+(baz);
 ```
 
 ### doubleIndent
@@ -90,9 +90,10 @@ let fn = fun () { }
 - Blank line support (add a noop AstNode allowed in block statements)
 - Remove leading/trailing comment logic (manual comments are beyond me)
 - Add parsing/formatting for try-catch blocks
+- Add an option for wrapped operator placement (start or end of line)
 
 ## "Reference Material"
 
 - Astro's [Prettier plugin](https://github.com/withastro/prettier-plugin-astro)
 - Catspeak's [GML Parser code](https://github.com/katsaii/catspeak-lang/blob/dev-3.2.1-with-inst-fix/src-lts/scripts/scr_catspeak_parser/scr_catspeak_parser.gml) (the parser is mostly transpiled from GML)
-- `klapro`'s ["Catspeak extension"](https://github.com/klapro/catspeak-vscode-ext) (for the lexer)
+- `klapro`'s ["Catspeak extension"](https://github.com/klapro/catspeak-vscode-ext) (licensed under MIT, for the lexer's basic structure and test cases)

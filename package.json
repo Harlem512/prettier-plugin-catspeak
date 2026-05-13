@@ -1,15 +1,36 @@
 {
+  "name": "@harlem512/prettier-plugin-catspeak",
+  "version": "0.1.0",
+  "description": "A Prettier plugin for Catspeak",
+  "keywords": [
+    "catspeak",
+    "prettier-plugin",
+    "prettier",
+    "formatter"
+  ],
+  "homepage": "https://github.com/Harlem512/prettier-plugin-catspeak#readme",
+  "bugs": {
+    "url": "https://github.com/Harlem512/prettier-plugin-catspeak/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Harlem512/prettier-plugin-catspeak.git"
+  },
+  "license": "MIT",
+  "author": "Harlem512",
+  "type": "commonjs",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest"
+  },
+  "dependencies": {
+    "prettier": "^3.8.3"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.2",
     "jest": "^30.4.0",
     "ts-jest": "^29.4.9",
     "typescript": "^6.0.3"
-  },
-  "scripts": {
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest"
-  },
-  "dependencies": {
-    "prettier": "^3.8.3"
   }
 }
