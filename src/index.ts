@@ -26,37 +26,7 @@ export const parsers: Record<string, Parser<AstNode>> = {
         throw new Error(JSON.stringify(result.errors[0], undefined, 2))
       }
 
-      const commentNodes = result.tokens
-        .filter((t) => t.type === 'Comment')
-        .map<CommentNode>((n) => ({
-          type: 'Comment',
-          value: n.value,
-          range: n.range,
-          leading: true,
-          leadingTrivia: null,
-          trailingTrivia: null,
-        }))
-
-      return {
-        type: 'Block',
-        block: result.ast,
-        leadingTrivia: null,
-        trailingTrivia: null,
-        comments: commentNodes,
-        isRoot: true,
-        range: {
-          start: result.ast[0]?.range.start ?? {
-            offset: text.length,
-            character: 0,
-            line: 0,
-          },
-          end: result.ast.at(-1)?.range.end ?? {
-            offset: text.length,
-            character: 0,
-            line: 0,
-          },
-        },
-      }
+      return result.ast
     },
     astFormat: 'catspeak',
     locStart(node) {

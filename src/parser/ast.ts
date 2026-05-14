@@ -10,23 +10,19 @@ interface BaseNode {
   trailingTrivia: Token | null
 }
 
-export interface CommentNode extends BaseNode {
-  type: 'Comment'
-  value: string
-}
+// MARK: fake
 
 export interface BlockNode extends BaseNode {
   type: 'Block'
   block: AstNode[]
   /** IMPORTANT: used by prettier to automatically print comments */
-  comments: CommentNode[]
+  comments?: CommentNode[]
   isRoot: boolean
 }
 
-export interface LetStatement extends BaseNode {
-  type: 'LetStatement'
-  identifier: IdentifierNode | AssignmentNode
-  value: AstExpressionNode | null
+export interface CommentNode extends BaseNode {
+  type: 'Comment'
+  value: string
 }
 
 export interface GroupNode extends BaseNode {
@@ -34,49 +30,25 @@ export interface GroupNode extends BaseNode {
   inside: AstExpressionNode
 }
 
-export interface IdentifierNode extends BaseNode {
-  type: 'Identifier'
-  name: string
+// MARK: statement
+
+export interface LetStatement extends BaseNode {
+  type: 'LetStatement'
+  identifier: IdentifierNode | AssignmentNode
+  value: AstExpressionNode | null
 }
 
-export interface NumberNode extends BaseNode {
-  type: 'Number'
-  value: string
-}
+// MARK: expression
 
-export interface StringNode extends BaseNode {
-  type: 'String'
-  value: string
+export interface AccessorNode extends BaseNode {
+  type: 'Accessor'
+  collection: AstExpressionNode
+  key: AstExpressionNode
 }
 
 export interface ArrayLiteralNode extends BaseNode {
   type: 'ArrayLiteral'
   values: AstExpressionNode[]
-}
-
-export interface StructLiteralNode extends BaseNode {
-  type: 'StructLiteral'
-  entries: StructLiteralEntryNode[]
-}
-
-export interface StructLiteralEntryNode extends BaseNode {
-  type: 'StructLiteralEntry'
-  key: AstExpressionNode
-  value: AstExpressionNode | null
-}
-
-export interface ContinueNode extends BaseNode {
-  type: 'Continue'
-}
-
-export interface ReturnNode extends BaseNode {
-  type: 'Return'
-  value: AstExpressionNode | null
-}
-
-export interface BreakNode extends BaseNode {
-  type: 'Break'
-  value: AstExpressionNode | null
 }
 
 export interface AssignmentNode extends BaseNode {
@@ -86,9 +58,36 @@ export interface AssignmentNode extends BaseNode {
   value: AstExpressionNode
 }
 
+export interface BreakNode extends BaseNode {
+  type: 'Break'
+  value: AstExpressionNode | null
+}
+
+export interface CallNode extends BaseNode {
+  type: 'Call'
+  fun: AstExpressionNode
+  isConstructor: boolean
+  arguments: AstExpressionNode[] | null
+}
+
+export interface ContinueNode extends BaseNode {
+  type: 'Continue'
+}
+
 export interface DoNode extends BaseNode {
   type: 'Do'
   block: AstNode[]
+}
+
+export interface FunctionNode extends BaseNode {
+  type: 'Function'
+  arguments: IdentifierNode[]
+  block: AstNode[]
+}
+
+export interface IdentifierNode extends BaseNode {
+  type: 'Identifier'
+  name: string
 }
 
 export interface IfNode extends BaseNode {
@@ -105,23 +104,9 @@ export interface MatchNode extends BaseNode {
   cases: { case: AstExpressionNode | null; block: AstNode[] }[]
 }
 
-export interface WhileNode extends BaseNode {
-  type: 'While'
-  condition: AstExpressionNode
-  block: AstNode[]
-}
-
-export interface WithNode extends BaseNode {
-  type: 'With'
-  condition: AstExpressionNode
-  block: AstNode[]
-}
-
-export interface CallNode extends BaseNode {
-  type: 'Call'
-  fun: AstExpressionNode
-  isConstructor: boolean
-  arguments: AstExpressionNode[] | null
+export interface NumberNode extends BaseNode {
+  type: 'Number'
+  value: string
 }
 
 export interface OperatorNode extends BaseNode {
@@ -131,21 +116,43 @@ export interface OperatorNode extends BaseNode {
   right: AstExpressionNode
 }
 
+export interface ReturnNode extends BaseNode {
+  type: 'Return'
+  value: AstExpressionNode | null
+}
+
+export interface StringNode extends BaseNode {
+  type: 'String'
+  value: string
+}
+
+export interface StructLiteralNode extends BaseNode {
+  type: 'StructLiteral'
+  entries: StructLiteralEntryNode[]
+}
+
+// fake node
+export interface StructLiteralEntryNode extends BaseNode {
+  type: 'StructLiteralEntry'
+  key: AstExpressionNode
+  value: AstExpressionNode | null
+}
+
 export interface UnaryNode extends BaseNode {
   type: 'Unary'
   operation: string
   value: AstExpressionNode
 }
 
-export interface AccessorNode extends BaseNode {
-  type: 'Accessor'
-  collection: AstExpressionNode
-  key: AstExpressionNode
+export interface WithNode extends BaseNode {
+  type: 'With'
+  condition: AstExpressionNode
+  block: AstNode[]
 }
 
-export interface FunctionNode extends BaseNode {
-  type: 'Function'
-  arguments: IdentifierNode[]
+export interface WhileNode extends BaseNode {
+  type: 'While'
+  condition: AstExpressionNode
   block: AstNode[]
 }
 
@@ -184,9 +191,8 @@ export interface ParseError {
 }
 
 export interface ParseResult {
-  ast: AstNode[]
+  ast: BlockNode
   errors: ParseError[]
-  tokens: Token[]
 }
 
 // Maps node types to their interface

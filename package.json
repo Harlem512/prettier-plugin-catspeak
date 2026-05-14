@@ -18,7 +18,7 @@
   },
   "license": "MIT",
   "author": "Harlem512",
-  "type": "commonjs",
+  "type": "module",
   "main": "src/index.ts",
   "scripts": {
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest"

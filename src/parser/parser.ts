@@ -2,6 +2,7 @@ import type {
   ArrayLiteralNode,
   AstExpressionNode,
   AstNode,
+  CommentNode,
   GroupNode,
   IdentifierNode,
   IfNode,
@@ -17,6 +18,17 @@ import { tokenize, type Range, type Token, type TokenType } from './lexer'
 export function parse(source: string): ParseResult {
   const tokens = tokenize(source)
   const errors: ParseError[] = []
+  const comments: CommentNode[] = tokens
+    .filter((t) => t.type === 'Comment')
+    .map<CommentNode>((n) => ({
+      type: 'Comment',
+      value: n.value,
+      range: n.range,
+      leading: true,
+      leadingTrivia: null,
+      trailingTrivia: null,
+    }))
+
   /** current token index */
   let pos = -1
   advance()
@@ -919,21 +931,34 @@ export function parse(source: string): ParseResult {
   }
 
   // MARK: RUN
-  const ast: AstNode[] = []
+  const start = current().range.start
+
+  const nodes: AstNode[] = []
   while (!isAtEnd()) {
     try {
       // console.log('Start Root Node', ast, current())
       const statement = parseStatement()
-      if (statement) ast.push(statement)
+      if (statement) nodes.push(statement)
     } catch (e) {
       if (!isAtEnd()) {
         advance()
       }
     }
   }
+
   return {
-    ast,
-    tokens,
+    ast: {
+      type: 'Block',
+      block: nodes,
+      leadingTrivia: null,
+      trailingTrivia: null,
+      comments,
+      isRoot: true,
+      range: {
+        start,
+        end: current().range.end,
+      },
+    },
     errors,
   }
 }
