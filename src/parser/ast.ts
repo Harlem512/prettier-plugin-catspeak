@@ -2,12 +2,10 @@
  * Catspeak AST Node Definitions
  */
 
-import type { Range, Token } from './lexer'
+import type { Range } from './lexer'
 
 interface BaseNode {
   range: Range
-  leadingTrivia: Token[] | null
-  trailingTrivia: Token | null
 }
 
 // MARK: fake
