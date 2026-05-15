@@ -17,6 +17,17 @@ function test(raw: string, formatted: string, options?: Options) {
       useTabs: true,
     })
     const formNormal = form1.replaceAll(long, 'long')
+    // console.log(
+    //   JSON.stringify(
+    //     {
+    //       itr: 1,
+    //       got: formNormal,
+    //       exp: expected,
+    //     },
+    //     undefined,
+    //     2,
+    //   ),
+    // )
     expect(formNormal).toBe(expected)
 
     // run formatter again to ensure tokenization doesn't get messed up
@@ -27,6 +38,17 @@ function test(raw: string, formatted: string, options?: Options) {
       useTabs: true,
     })
     const formNormal2 = form2.replaceAll(long, 'long')
+    // console.log(
+    //   JSON.stringify(
+    //     {
+    //       itr: 1,
+    //       got: formNormal2,
+    //       exp: expected,
+    //     },
+    //     undefined,
+    //     2,
+    //   ),
+    // )
     expect(formNormal2).toBe(expected)
   }
 }
@@ -210,14 +232,14 @@ describe('if', () => {
     it(
       'wrapped elseif condition',
       test(
-        'if a{\n\nb}else if long{d}else{e}',
+        'if a{\t\nb}else if long{d}else{e}',
         'if a { b } else if\n\t\tlong\n{ d } else { e }',
       ),
     )
     it(
       'elseif stays on one line',
       test(
-        'if a{\n\nlong}else if long{d}else{e}',
+        'if a{\t\nlong}else if long{d}else{e}',
         'if a {\n\tlong\n} else if\n\t\tlong\n{ d } else { e }',
       ),
     )
@@ -306,8 +328,39 @@ describe('with', () => {
   )
 })
 
-describe('empty tests', () => {
+// MARK: empty
+describe('empty strings', () => {
   it('empty string', test('', ''))
-  it('only whitespace', test('\n\n\n\n\n\n\n\n\n', ''))
-  it('one comment', test('--hello', '--hello'))
+  it('only whitespace', test('\n\n\n\n\t\t\t\n\n\n\n\n', ''))
+})
+
+// MARK: comments
+describe('comments', () => {
+  it('single', test('--hello', '--hello'))
+  it('leading whitespace', test('\n\n\n\n\n\n--hello', '--hello'))
+  it('trailing whitespace', test('--hello\n\n\n\n\n\na', '--hello\n\na'))
+  it('newline before statement', test('-- a\n\nlet a', '-- a\n\nlet a'))
+  it('attach to statement', test('-- a\nlet a', '-- a\nlet a'))
+  it(
+    'with newlines',
+    test(
+      '-- a\n\n\n\n\n\n-- b\n\n\n\n\n\n\t\n-- c\na',
+      '-- a\n\n-- b\n\n-- c\na',
+    ),
+  )
+  it('a', test('-- a\n\n\n--b', '-- a\n\n--b'))
+  it('b', test('\n-- a\n\n\n--b', '-- a\n\n--b'))
+  it('c', test('\n\n-- a\n\n\n--b', '-- a\n\n--b'))
+  it('d', test('-- a\n\n\n--b\n\n\n\n\n', '-- a\n\n--b\n'))
+  it('e', test('-- a\n\n\n--b\n', '-- a\n\n--b'))
+})
+
+// MARK: newlines
+describe('newlines', () => {
+  it('no newline', test('a\n\tb', 'a\nb'))
+  it('insert newline exact', test('a\n\nb', 'a\n\nb'))
+  it('insert newline overkill', test('a\n\n\n\n\t\n\nb', 'a\n\nb'))
+
+  it('block', test('do{c\n--a\n\n\n\n--b\n}', 'do {\n\tc\n\t--a\n\n\t--b\n}'))
+  it('root', test('c\n--a\n\n\n\n--b\n', 'c\n--a\n\n--b'))
 })

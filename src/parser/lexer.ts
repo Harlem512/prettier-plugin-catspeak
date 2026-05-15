@@ -103,10 +103,9 @@ export function tokenize(source: string): Token[] {
   let pos = 0
   let line = 0
   let col = 0
-  let offset = 0
 
   function currentPos(): Position {
-    return { line, character: col, offset }
+    return { line, character: col, offset: pos }
   }
 
   function current(): string {
@@ -127,7 +126,6 @@ export function tokenize(source: string): Token[] {
     } else {
       col++
     }
-    offset += ch.length
     return ch
   }
 
@@ -169,6 +167,8 @@ export function tokenize(source: string): Token[] {
     if (ch === '-' && peek() === '-') {
       let comment = advanceMatching((current) => current !== '\n')
       makeToken('Comment', comment, start)
+      // consume next token if its a newline (it could be EOF)
+      if (current() === '\n') advance() // trailing new line
       continue
     }
 

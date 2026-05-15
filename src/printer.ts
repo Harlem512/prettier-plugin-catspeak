@@ -128,17 +128,35 @@ const nodePrinters: {
   ) => Doc
 } = {
   // comments are printed elsewhere
-  Comment() {
+  Comment(node) {
+    throw new Error(
+      `Attempted to manually print comment ${JSON.stringify(node.node)}`,
+    )
+  },
+  // comment placeholder
+  CommentPlaceholder() {
     return ''
   },
   // MARK: block
   Block(path, options, print) {
     const body = joinSemicolon(path, print, options, 'block')
-    if (path.node.isRoot && path.node.block.length > 0) {
-      return [body, hardline]
-    } else {
+    // non-root node, early return
+    if (!path.node.isRoot) return body
+
+    // check if a fake newline was inserted
+    if (
+      path.node.block.length === 1 &&
+      path.node.block[0].type === 'CommentPlaceholder'
+    ) {
+      // if the only node is a CommentPlaceholder,
+      // then this is a comment-only file
+      // so don't print the trailing hardline
+      // since the comment itself prints the newline
       return body
     }
+
+    // default to printing body and a trailing hardline
+    return [body, hardline]
   },
   // MARK: group
   Group(path, options, print) {
@@ -148,6 +166,10 @@ const nodePrinters: {
       softline,
       ')',
     ])
+  },
+  // MARK: newline
+  Newline() {
+    return ifBreak('', hardline)
   },
   // MARK: let
   LetStatement(path, options, print) {
@@ -458,8 +480,10 @@ export const printer: Printer<AstNode> = {
     return fn(path as any, options, print, args)
   },
   printComment(path) {
-    if (path.node.type === 'Comment') return path.node.value
-    return path.node.type
+    // ensure comment-only node
+    if (path.node.type !== 'Comment') return path.node.type
+    // default comment print
+    return path.node.value
   },
   // required to make prettier's auto-comments work correctly
   // all nodes can have comments
@@ -504,8 +528,7 @@ export const printer: Printer<AstNode> = {
       case 'Return':
         return node.value ? [node.value] : []
       case 'Block':
-        // the root block can attach comments to itself if it has no body
-        return node.isRoot && node.block.length === 0 ? [node] : node.block
+        return node.block
       case 'StructLiteral':
         return node.entries
       case 'StructLiteralEntry':
@@ -522,6 +545,10 @@ export const printer: Printer<AstNode> = {
       case 'Identifier':
       case 'Continue':
       case 'Break':
+      // fake nodes
+      case 'Newline':
+      case 'Comment':
+      case 'CommentPlaceholder':
       default:
         return []
     }

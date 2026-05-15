@@ -19,6 +19,17 @@ describe('Lexer', () => {
     ).toEqual(['Newline', 'Newline', 'Newline'])
   })
 
+  it('tokenizes whitespace with comments', () => {
+    expect(
+      tokTypes(
+        `  -- hello
+
+      `,
+        true,
+      ),
+    ).toEqual(['Comment:-- hello', 'Newline'])
+  })
+
   it('tokenizes keywords', () => {
     const result = tokTypes('let fun if else while for return case match')
     expect(result).toEqual([

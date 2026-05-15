@@ -25,9 +25,24 @@ export interface CommentNode extends BaseNode {
   value: string
 }
 
+/**
+ * A "placeholder" node for attaching comments to
+ */
+export interface CommentPlaceholderNode extends BaseNode {
+  type: 'CommentPlaceholder'
+}
+
 export interface GroupNode extends BaseNode {
   type: 'Group'
   inside: AstExpressionNode
+}
+
+/**
+ * A "placeholder" node for blank lines. Condenses 2 or more sequential newline
+ * tokens into a single node.
+ */
+export interface NewlineNode extends BaseNode {
+  type: 'Newline'
 }
 
 // MARK: statement
@@ -157,7 +172,12 @@ export interface WhileNode extends BaseNode {
 }
 
 // non-statement, non-expression nodes (used internally)
-export type AstFakeNode = CommentNode | StructLiteralEntryNode | BlockNode
+export type AstFakeNode =
+  | BlockNode
+  | CommentNode
+  | CommentPlaceholderNode
+  | NewlineNode
+  | StructLiteralEntryNode
 
 export type AstExpressionNode =
   | AccessorNode
@@ -201,7 +221,9 @@ export type NodeMap = {
   // fake nodes
   Block: BlockNode
   Comment: CommentNode
+  CommentPlaceholder: CommentPlaceholderNode
   Group: GroupNode
+  Newline: NewlineNode
   StructLiteralEntry: StructLiteralEntryNode
   // let statement
   LetStatement: LetStatement

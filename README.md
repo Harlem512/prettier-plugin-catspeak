@@ -86,11 +86,10 @@ let fn = fun () { }
 ## Future Plans
 
 - VSCode extension
-- Refactor all block-type statements into their own AstNode
-- Blank line support (add a noop AstNode allowed in block statements)
 - Remove leading/trailing comment logic (manual comments are beyond me)
 - Add parsing/formatting for try-catch blocks
 - Add an option for wrapped operator placement (start or end of line)
+- Ensure wrapped blocks leave the parenthesis behind, ie `if (\n\t\tlong\n) { }`
 
 ## "Reference Material"
 

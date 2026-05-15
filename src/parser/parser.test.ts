@@ -37,7 +37,10 @@ function parse(
   const block = node<BlockNode>(p.ast, 'Block', 0, input.length, {
     isRoot: true,
   })
-  expect(block.block).toHaveLength(nodeLength)
+  expect(
+    // filter out comment placeholder node
+    block.block.filter(({ type }) => type !== 'CommentPlaceholder'),
+  ).toHaveLength(nodeLength)
   expect(block.comments).toBeDefined()
   return p
 }

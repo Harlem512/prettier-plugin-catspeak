@@ -7,6 +7,7 @@ import type {
   IdentifierNode,
   IfNode,
   MatchNode,
+  NewlineNode,
   NumberNode,
   ParseError,
   ParseResult,
@@ -14,6 +15,8 @@ import type {
   StructLiteralNode,
 } from './ast'
 import { tokenize, type Range, type Token, type TokenType } from './lexer'
+
+const useTrivia = false
 
 export function parse(source: string): ParseResult {
   const tokens = tokenize(source)
@@ -31,7 +34,14 @@ export function parse(source: string): ParseResult {
 
   /** current token index */
   let pos = -1
+  /** last significant token. used for node range calculations */
+  let lastToken: Token | undefined = undefined
+  let lastTokenPos: number = 0
+
+  // advance to the first token in the tokenizer
+  // advanced is used instead of pos = 0 to skip leading whitespace/comments
   advance()
+
   /** last-used trivia index */
   let triviaPos = 0
 
@@ -57,6 +67,10 @@ export function parse(source: string): ParseResult {
       throwError('Unexpected end of file', current().range)
     }
 
+    // update last token
+    lastToken = current()
+    lastTokenPos = pos
+
     while (true) {
       pos++
       const currentType = current().type
@@ -64,7 +78,69 @@ export function parse(source: string): ParseResult {
     }
   }
 
+  /**
+   * Creates a newline block out of newline tokens between statements inside
+   * a block.
+   *
+   * Consumes newline tokens until it hits a comment, then exits with the
+   * accumulated tokens. Prettier's commenting algorithm already handles
+   * newlines placed between comments, so we shouldn't parse those a second
+   * time.
+   *
+   * Overall, allows for a single blank line to be preserved between statements in a block when run through the printer.
+   *
+   * ```
+   * -- note the newline between these statements
+   * let a = foo
+   *
+   * let b = bar
+   * ```
+   */
+  function getNewline(): NewlineNode | null {
+    let firstNewline: Token | null = null
+    let sequentialNewLines = 0
+
+    for (let tokenIndex = lastTokenPos + 1; tokenIndex <= pos; tokenIndex++) {
+      const token = tokens[tokenIndex]
+      const type = token.type
+
+      // consume newline tokens until...
+      if (type === 'Newline') {
+        if (!firstNewline) {
+          // first newline in the sequence
+          firstNewline = token
+        }
+        // increment sequential counter
+        sequentialNewLines += 1
+        continue
+      }
+
+      // not a new line...
+      if (sequentialNewLines > 1 && firstNewline) {
+        // build the newline node
+        return {
+          type: 'Newline',
+          leadingTrivia: null,
+          trailingTrivia: null,
+          range: {
+            start: firstNewline.range.start,
+            end: {
+              ...token.range.start,
+              offset: token.range.start.offset - 1,
+            },
+          },
+        }
+      }
+
+      return null
+    }
+
+    return null
+  }
+
   function getLeadingTrivia(): Token[] | null {
+    if (!useTrivia) return null
+
     const leadingTrivia: Token[] = []
     // get leading tokens
     for (let p = triviaPos; p < pos; p++) {
@@ -78,6 +154,8 @@ export function parse(source: string): ParseResult {
   }
 
   function getTrailingTrivia(): Token | null {
+    if (!useTrivia) return null
+
     // EOF has no trailing tokens (or trivia)
     if (isAtEnd()) return null
 
@@ -118,18 +196,34 @@ export function parse(source: string): ParseResult {
     throw err
   }
 
+  function getRange(
+    start: { range: Range },
+    end: { range: Range } | undefined = lastToken,
+  ): Range {
+    if (!end) throwError('Unexpected lack of lastToken', start.range)
+    return { start: start.range.start, end: end?.range.end }
+  }
+
   // MARK: block
   function parseBlock(): AstNode[] {
-    const nodes: AstNode[] = []
-
     expect('Punctuation', '{')
     advance()
+
+    // start with leading newlines
+    const leadingNewline = getNewline()
+    const nodes: AstNode[] = leadingNewline ? [leadingNewline] : []
 
     while (!isAtEnd() && !is('Punctuation', '}')) {
       try {
         const statement = parseStatement()
         if (statement) nodes.push(statement)
-      } catch {}
+
+        const leadingNewline = getNewline()
+        if (leadingNewline) nodes.push(leadingNewline)
+      } catch (e: any) {
+        // check if this is a normal error
+        if (!e.range) throw e
+      }
     }
 
     expect('Punctuation', '}')
@@ -141,7 +235,6 @@ export function parse(source: string): ParseResult {
   // MARK: statement
   function parseStatement(): AstNode | null {
     const peeked = current()
-    const start = peeked.range.start
 
     if (is('Punctuation', ';', peeked)) {
       // empty semicolons don't exist in the AST
@@ -176,7 +269,7 @@ export function parse(source: string): ParseResult {
         // let statement has no trivia, the identifier and value have trivia
         leadingTrivia: null,
         trailingTrivia: null,
-        range: { start, end: current().range.start },
+        range: getRange(peeked),
       }
     }
 
@@ -203,9 +296,7 @@ export function parse(source: string): ParseResult {
       }
       return {
         type,
-        range: value
-          ? { start: peeked.range.start, end: value.range.end }
-          : peeked.range,
+        range: value ? getRange(peeked, value) : peeked.range,
         value,
         leadingTrivia: getLeadingTrivia(),
         trailingTrivia: getTrailingTrivia(),
@@ -249,7 +340,7 @@ export function parse(source: string): ParseResult {
       const value = parseExpression()
       return {
         type: 'Assignment',
-        range: { start: node.range.start, end: value.range.end },
+        range: getRange(node, value),
         leadingTrivia: null,
         trailingTrivia: null,
         operator: peeked.value,
@@ -277,7 +368,7 @@ export function parse(source: string): ParseResult {
       return {
         type: 'Do',
         block: parseBlock(),
-        range: { start: peeked.range.start, end: current().range.start },
+        range: getRange(peeked),
         leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
       }
@@ -307,10 +398,7 @@ export function parse(source: string): ParseResult {
         ifBlock,
         elseBlock,
         ifElseExpression,
-        range: {
-          start: peeked.range.start,
-          end: current().range.start,
-        },
+        range: getRange(peeked),
         leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
       }
@@ -328,16 +416,12 @@ export function parse(source: string): ParseResult {
         type: peeked.value === 'while' ? 'While' : 'With',
         condition,
         block,
-        range: {
-          start: peeked.range.start,
-          end: current().range.start,
-        },
+        range: getRange(peeked),
         leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
       }
     } else if (is('Keyword', 'match', peeked)) {
       // MARK: match
-      const start = current().range.start
       const leadingTrivia = getLeadingTrivia()
       advance() // consume match
 
@@ -375,11 +459,10 @@ export function parse(source: string): ParseResult {
         cases,
         leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
-        range: { start, end: current().range.start },
+        range: getRange(peeked),
       }
     } else if (is('Keyword', 'fun', peeked)) {
       // MARK: fun
-      const start = current().range.start
       const leadingTrivia = getLeadingTrivia()
       advance() // consume fun
 
@@ -415,7 +498,7 @@ export function parse(source: string): ParseResult {
         block: body,
         leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
-        range: { start, end: current().range.end },
+        range: getRange(peeked),
       }
     } else {
       return parseCondition()
@@ -440,7 +523,7 @@ export function parse(source: string): ParseResult {
           left: result,
           right,
           operation: op,
-          range: { start: result.range.start, end: right.range.end },
+          range: getRange(result, right),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -462,7 +545,7 @@ export function parse(source: string): ParseResult {
           left: result,
           right,
           operation: 'and',
-          range: { start: result.range.start, end: right.range.end },
+          range: getRange(result, right),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -485,7 +568,7 @@ export function parse(source: string): ParseResult {
           fun: resultIsName ? result : other,
           arguments: resultIsName ? [other] : [result],
           isConstructor: false,
-          range: { start: result.range.start, end: other.range.end },
+          range: getRange(result, other),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -508,7 +591,7 @@ export function parse(source: string): ParseResult {
           left: result,
           right,
           operation: relation,
-          range: { start: result.range.start, end: right.range.end },
+          range: getRange(result, right),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -536,7 +619,7 @@ export function parse(source: string): ParseResult {
           left: result,
           right,
           operation: op,
-          range: { start: result.range.start, end: right.range.end },
+          range: getRange(result, right),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -565,7 +648,7 @@ export function parse(source: string): ParseResult {
           left: result,
           right,
           operation: op,
-          range: { start: result.range.start, end: right.range.end },
+          range: getRange(result, right),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -588,7 +671,7 @@ export function parse(source: string): ParseResult {
           left: result,
           right,
           operation: op,
-          range: { start: result.range.start, end: right.range.end },
+          range: getRange(result, right),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -616,7 +699,7 @@ export function parse(source: string): ParseResult {
           left: result,
           right,
           operation: op,
-          range: { start: result.range.start, end: right.range.end },
+          range: getRange(result, right),
           leadingTrivia: null,
           trailingTrivia: null,
         }
@@ -634,14 +717,14 @@ export function parse(source: string): ParseResult {
       is('Operator', '+')
     ) {
       // MARK: unary ! ~ + -
-      const peeked = current()
+      const operator = current()
       advance() // consume op
       const index = parseIndex()
       return {
         type: 'Unary',
         value: index,
-        operation: peeked.value,
-        range: { start: peeked.range.start, end: index.range.end },
+        operation: operator.value,
+        range: getRange(operator, index),
         leadingTrivia: null,
         trailingTrivia: null,
       }
@@ -651,8 +734,13 @@ export function parse(source: string): ParseResult {
   }
 
   function parseIndex(): AstExpressionNode {
-    let callNew = is('Keyword', 'new') ? current() : null
-    if (callNew) advance()
+    // first token, used for range calculations
+    const start = current()
+
+    // used to track if this is a constructor with no arguments
+    // ie `new foo` vs `new foo()`
+    let callNewNoArgs = is('Keyword', 'new') ? start : null
+    if (callNewNoArgs) advance()
 
     let result = parseTerminal()
     while (true) {
@@ -668,14 +756,14 @@ export function parse(source: string): ParseResult {
         advance() // consume )
         result = {
           type: 'Call',
-          isConstructor: callNew !== null,
+          isConstructor: callNewNoArgs !== null,
           arguments: args,
           fun: result,
           leadingTrivia: getLeadingTrivia(),
           trailingTrivia: getTrailingTrivia(),
-          range: { start: result.range.start, end: current().range.start },
+          range: getRange(start),
         }
-        callNew = null
+        callNewNoArgs = null
       } else if (is('Punctuation', '[')) {
         // MARK: access [
         advance() // consume [
@@ -688,13 +776,13 @@ export function parse(source: string): ParseResult {
           key,
           leadingTrivia: getLeadingTrivia(),
           trailingTrivia: getTrailingTrivia(),
-          range: { start: result.range.start, end: current().range.start },
+          range: getRange(start),
         }
       } else if (is('Punctuation', '.')) {
         // MARK: access .
         advance() // consume .
         const tok = expect('Identifier')
-        const key: AstExpressionNode = {
+        const key: IdentifierNode = {
           type: 'Identifier',
           name: tok.value,
           range: tok.range,
@@ -708,21 +796,21 @@ export function parse(source: string): ParseResult {
           key,
           leadingTrivia: null,
           trailingTrivia: null,
-          range: { start: result.range.start, end: key.range.end },
+          range: getRange(start, key),
         }
       } else {
         break
       }
     }
 
-    if (callNew) {
-      // MARK: new
+    if (callNewNoArgs) {
+      // MARK: new no args
       return {
         type: 'Call',
         arguments: null,
         fun: result,
         isConstructor: true,
-        range: { start: callNew.range.start, end: current().range.start },
+        range: getRange(start),
         leadingTrivia: null,
         trailingTrivia: getTrailingTrivia(),
       }
@@ -785,7 +873,6 @@ export function parse(source: string): ParseResult {
 
   function parseGrouping(): AstExpressionNode {
     const peeked = current()
-    const start = peeked.range.start
     const leadingTrivia = getLeadingTrivia()
 
     if (is('Punctuation', '(', peeked)) {
@@ -793,16 +880,15 @@ export function parse(source: string): ParseResult {
       advance() // consume (
       const inside = parseExpression()
       expect('Punctuation', ')')
+      advance() // consume )
 
       const node: GroupNode = {
         type: 'Group',
         inside,
         leadingTrivia: leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
-        range: { start, end: current().range.end },
+        range: getRange(peeked),
       }
-
-      advance() // consume )
       return node
     } else if (is('Punctuation', '[', peeked)) {
       // MARK: array literal []
@@ -814,16 +900,16 @@ export function parse(source: string): ParseResult {
         if (is('Punctuation', ',')) advance()
       }
       expect('Punctuation', ']')
+      advance() // consume ]
 
       const array: ArrayLiteralNode = {
         type: 'ArrayLiteral',
         values,
-        range: { start, end: current().range.end },
+        range: getRange(peeked),
         leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
       }
 
-      advance() // consume ]
       return array
     } else if (is('Punctuation', '{')) {
       // MARK: struct { }
@@ -908,7 +994,7 @@ export function parse(source: string): ParseResult {
           value,
           leadingTrivia,
           trailingTrivia: getTrailingTrivia(),
-          range: { start: keyToken.range.start, end: current().range.start },
+          range: getRange(keyToken),
         })
       }
 
@@ -920,30 +1006,53 @@ export function parse(source: string): ParseResult {
         entries: entries,
         leadingTrivia,
         trailingTrivia: getTrailingTrivia(),
-        range: { start, end: current().range.end },
+        range: getRange(peeked),
       }
     } else {
       throwError(
-        `Expected '(', '[' or '{' as start of grouping, got '${current().value}'`,
-        current().range,
+        `Expected '(', '[' or '{' as start of grouping, got '${peeked.value}'`,
+        peeked.range,
       )
     }
   }
 
   // MARK: RUN
-  const start = current().range.start
+  // start with leading newlines
+  const leadingNewline = getNewline()
+  const nodes: AstNode[] = leadingNewline ? [leadingNewline] : []
 
-  const nodes: AstNode[] = []
   while (!isAtEnd()) {
     try {
-      // console.log('Start Root Node', ast, current())
       const statement = parseStatement()
       if (statement) nodes.push(statement)
-    } catch (e) {
+
+      const leadingNewline = getNewline()
+      if (leadingNewline) nodes.push(leadingNewline)
+    } catch (e: any) {
+      // check if this is a normal error
+      if (!e.range) throw e
       if (!isAtEnd()) {
         advance()
       }
     }
+  }
+
+  if (nodes.length === 1 && nodes[0].type === 'Newline') {
+    // if the only node in the root node is a newline, then remove it
+    // so it can be replaced with a CommentPlaceholder node (the doc is empty)
+    nodes.pop()
+  }
+
+  if (nodes.length === 0) {
+    // no nodes, push a fake newline node
+    // so comments can be attached correctly
+    nodes.push({
+      type: 'CommentPlaceholder',
+      leadingTrivia: null,
+      trailingTrivia: null,
+      // range is wonky so comments are all printed at the start
+      range: { start: current().range.end, end: current().range.end },
+    })
   }
 
   return {
@@ -955,7 +1064,7 @@ export function parse(source: string): ParseResult {
       comments,
       isRoot: true,
       range: {
-        start,
+        start: { character: 0, line: 0, offset: 0 },
         end: current().range.end,
       },
     },
