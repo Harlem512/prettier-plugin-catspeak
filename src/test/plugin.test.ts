@@ -307,7 +307,19 @@ describe('match', () => {
 // MARK: operator
 describe('operator', () => {
   it('simple', test('a+b*c', 'a + b * c'))
-  it('a + long', test('a+long', 'a\n\t\t+ long'))
+
+  describe('wrap operator', () => {
+    it('a + long', test('a+long', 'a\n\t\t+ long'))
+    it('long + b', test('long+b', 'long\n\t\t+ b'))
+    it('long + long', test('long+long', 'long\n\t\t+ long'))
+  })
+
+  describe("don't wrap operator", () => {
+    const o = { wrapBinaryOperators: false }
+    it('a + long', test('a+long', 'a +\n\t\tlong', o))
+    it('long + b', test('long+b', 'long +\n\t\tb', o))
+    it('long + long', test('long+long', 'long +\n\t\tlong', o))
+  })
 })
 
 // MARK: return

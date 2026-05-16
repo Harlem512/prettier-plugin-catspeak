@@ -406,13 +406,22 @@ const nodePrinters: {
   },
   // MARK: operator
   Operator(path, options, print) {
-    return group([
-      path.call(print, 'left'),
-      indentExp(
-        [line, path.node.operation, ' ', path.call(print, 'right')],
-        options,
-      ),
-    ])
+    if (options.wrapBinaryOperators) {
+      return group([
+        path.call(print, 'left'),
+        indentExp(
+          [line, path.node.operation, ' ', path.call(print, 'right')],
+          options,
+        ),
+      ])
+    } else {
+      return group([
+        path.call(print, 'left'),
+        ' ',
+        path.node.operation,
+        indentExp([line, path.call(print, 'right')], options),
+      ])
+    }
   },
   // MARK: return
   Return(path, options, print) {

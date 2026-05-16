@@ -83,10 +83,23 @@ let fn = fun { }
 let fn = fun () { }
 ```
 
+### wrapBinaryOperators
+
+If enabled, wrapped binary operation expressions will place their operator on a newline before the second operand.
+
+```catspeak
+-- wrapBinaryOperators = true
+x = foo
+    + bar
+
+-- wrapBinaryOperators = false
+x = foo +
+    bar
+```
+
 ## Future Plans
 
 - VSCode extension
-- Add an option for wrapped operator placement (start or end of line)
 
 ## "Reference Material"
 

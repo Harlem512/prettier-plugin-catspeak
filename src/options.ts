@@ -27,6 +27,8 @@ export interface CatspeakOptions {
   doubleIndent: boolean
   /** if functions with no arguments should drop ( ) */
   emptyFunctionArguments: boolean
+  /** if operators should be wrapped with their second expression */
+  wrapBinaryOperators: boolean
 }
 
 // adds catspeak options to the formatter
@@ -89,6 +91,13 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
     description:
       'If enabled, function declarations with no arguments will not have parenthesis. `let fn = fun { ... }`',
   },
+  wrapBinaryOperators: {
+    category: 'catspeak',
+    type: 'boolean',
+    default: true,
+    description:
+      'If enabled, wrapped binary operation expressions will place their operator on a newline before the second operand.',
+  },
 }
 
 // MARK: Default Options
@@ -97,4 +106,5 @@ export const defaultOptions: CatspeakOptions = {
   doubleIndent: true,
   semicolonMode: SemicolonMode.REQUIRED,
   emptyFunctionArguments: false,
+  wrapBinaryOperators: true,
 }
