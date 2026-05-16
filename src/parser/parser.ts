@@ -2,6 +2,7 @@ import type {
   ArrayLiteralNode,
   AstExpressionNode,
   AstNode,
+  CatchNode,
   CommentNode,
   GroupNode,
   IdentifierNode,
@@ -153,7 +154,7 @@ export function parse(source: string): ParseResult {
 
   // MARK: block
   function parseBlock(): AstNode[] {
-    const start = expect('Punctuation', '{')
+    expect('Punctuation', '{')
     advance()
 
     const nodes: AstNode[] = []
@@ -242,7 +243,8 @@ export function parse(source: string): ParseResult {
       if (
         is('Keyword', 'let') ||
         is('Punctuation', '}') ||
-        is('Punctuation', ';')
+        is('Punctuation', ';') ||
+        is('EOF')
       ) {
         value = null
       } else {
@@ -263,7 +265,12 @@ export function parse(source: string): ParseResult {
       }
     } else if (is('Keyword', 'throw', peeked)) {
       // MARK: throw
-      throw 'Throw keyword'
+      advance() // consume throw
+      return {
+        type: 'Throw',
+        value: parseExpression(),
+        range: getRange(peeked),
+      }
     } else {
       return parseAssign()
     }
@@ -300,10 +307,36 @@ export function parse(source: string): ParseResult {
   }
 
   function parseCatch(): AstExpressionNode {
-    const result = parseExpressionBlock()
+    let result = parseExpressionBlock()
+
     // MARK: catch
-    // TODO: parse catch expressions
-    return result
+    while (true) {
+      const peeked = current()
+      // not a catch block
+      if (!is('Keyword', 'catch', peeked)) return result
+
+      let identifier: CatchNode['identifier'] = null
+
+      advance() // consume catch
+
+      const next = current()
+      if (is('Identifier')) {
+        advance() // consume identifier
+        identifier = {
+          type: 'Identifier',
+          name: next.value,
+          range: next.range,
+        }
+      }
+
+      result = {
+        type: 'Catch',
+        identifier,
+        expression: result,
+        block: parseBlock(),
+        range: getRange(result),
+      }
+    }
   }
 
   function parseExpressionBlock(): AstExpressionNode {

@@ -270,7 +270,7 @@ const nodePrinters: {
   // MARK: break
   Break(path, options, print) {
     return path.node.value
-      ? group(['break', indent(path.call(print, 'value'))])
+      ? group(['break', indent([line, path.call(print, 'value')])])
       : 'break'
   },
   // MARK: fn()
@@ -289,6 +289,16 @@ const nodePrinters: {
           ]
         : '',
       ')',
+    ])
+  },
+  // MARK: catch e
+  Catch(path, options, print) {
+    return group([
+      group([path.call(print, 'expression')]),
+      ' catch',
+      path.node.identifier ? [' ', path.call(print, 'identifier')] : '',
+      ' {',
+      group([printBlock(path, 'block', print, options), line, '}']),
     ])
   },
   // MARK: continue
@@ -407,7 +417,7 @@ const nodePrinters: {
   // MARK: return
   Return(path, options, print) {
     return path.node.value
-      ? group(['return', indent(path.call(print, 'value'))])
+      ? group(['return', indent([line, path.call(print, 'value')])])
       : 'return'
   },
   // MARK: "string"
@@ -454,6 +464,12 @@ const nodePrinters: {
         path.call(print as any, 'value'),
       ]),
     ])
+  },
+  // MARK: throw
+  Throw(path, options, print) {
+    return path.node.value
+      ? group(['throw', indent([line, path.call(print, 'value')])])
+      : 'throw'
   },
   // MARK: !a
   Unary(path, options, print) {

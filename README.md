@@ -86,7 +86,6 @@ let fn = fun () { }
 ## Future Plans
 
 - VSCode extension
-- Add parsing/formatting for try-catch blocks
 - Add an option for wrapped operator placement (start or end of line)
 
 ## "Reference Material"

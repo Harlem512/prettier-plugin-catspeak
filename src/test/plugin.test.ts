@@ -155,6 +155,13 @@ describe('assignment', () => {
   it('comments', test('--\na=b--\n--', '--\na = b --\n--'))
 })
 
+// MARK: break
+describe('break', () => {
+  it('normal', test('\t\t\tbreak\na', 'break a'))
+  it('no expression', test('\t\t\tbreak\n', 'break'))
+  it('long', test('\t\t\tbreak long', 'break\n\tlong'))
+})
+
 // MARK: call
 describe('call', () => {
   it('simple', test('f(a,b)', 'f(a, b)'))
@@ -163,6 +170,23 @@ describe('call', () => {
   it('no arguments', test('a\n(\n)', 'a()'))
   it('long name, no arguments', test('long\n(\n)', 'long()'))
   it('long name, new, no arguments', test('new long\n(\n)', 'new long()'))
+})
+
+// MARK: catch
+describe('catch', () => {
+  it('simple', test('a catch b {}', 'a catch b { }'))
+  it('do-catch', test('do {long}catch e{}', 'do {\n\tlong\n} catch e { }'))
+  it('no identifier', test('a catch \n\n {}', 'a catch { }'))
+  it('long expression', test('long catch \n\n {}', 'long catch {\n}'))
+  it(
+    'short expression long catch',
+    test('a catch {long}', 'a catch {\n\tlong\n}'),
+  )
+  it(
+    'long expression long catch',
+    test('long catch {long}', 'long catch {\n\tlong\n}'),
+  )
+  it('all long', test('long catch long {long}', 'long catch long {\n\tlong\n}'))
 })
 
 // MARK: do
@@ -286,6 +310,13 @@ describe('operator', () => {
   it('a + long', test('a+long', 'a\n\t\t+ long'))
 })
 
+// MARK: return
+describe('return', () => {
+  it('normal', test('\t\treturn\na', 'return a'))
+  it('no expression', test('\t\treturn\n', 'return'))
+  it('long', test('\t\treturn long', 'return\n\tlong'))
+})
+
 // MARK: struct literal
 describe('struct literal', () => {
   it('empty', test('{\n\t}', '{}'))
@@ -306,6 +337,11 @@ describe('struct literal', () => {
       commaMode: CommaMode.NONE,
     }),
   )
+})
+
+describe('throw', () => {
+  it('normal', test('throw a', 'throw a'))
+  it('long throw', test('throw long', 'throw\n\tlong'))
 })
 
 // MARK: unary

@@ -83,6 +83,13 @@ export interface CallNode extends BaseNode {
   arguments: AstExpressionNode[] | null
 }
 
+export interface CatchNode extends BaseNode {
+  type: 'Catch'
+  expression: AstExpressionNode
+  identifier: IdentifierNode | null
+  block: AstNode[]
+}
+
 export interface ContinueNode extends BaseNode {
   type: 'Continue'
 }
@@ -151,6 +158,11 @@ export interface StructLiteralEntryNode extends BaseNode {
   value: AstExpressionNode | null
 }
 
+export interface ThrowNode extends BaseNode {
+  type: 'Throw'
+  value: AstExpressionNode
+}
+
 export interface UnaryNode extends BaseNode {
   type: 'Unary'
   operation: string
@@ -183,6 +195,7 @@ export type AstExpressionNode =
   | AssignmentNode
   | BreakNode
   | CallNode
+  | CatchNode
   | ContinueNode
   | DoNode
   | FunctionNode
@@ -195,6 +208,7 @@ export type AstExpressionNode =
   | ReturnNode
   | StringNode
   | StructLiteralNode
+  | ThrowNode
   | UnaryNode
   | WhileNode
   | WithNode
@@ -231,6 +245,7 @@ export type NodeMap = {
   Assignment: AssignmentNode
   Break: BreakNode
   Call: CallNode
+  Catch: CatchNode
   Continue: ContinueNode
   Do: DoNode
   Function: FunctionNode
@@ -242,6 +257,7 @@ export type NodeMap = {
   Return: ReturnNode
   String: StringNode
   StructLiteral: StructLiteralNode
+  Throw: ThrowNode
   Unary: UnaryNode
   While: WhileNode
   With: WithNode
