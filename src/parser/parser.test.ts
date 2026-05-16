@@ -20,13 +20,6 @@ import {
 import type { Position } from './lexer'
 import { parse as baseParse } from './parser'
 
-// pretty print error
-function pp(p: ParseResult, tokens = false) {
-  console.log(
-    JSON.stringify(tokens ? p : { ast: p.ast, errors: p.errors }, undefined, 2),
-  )
-}
-
 function parse(
   str: string | string[],
   nodeLength: number = 1,

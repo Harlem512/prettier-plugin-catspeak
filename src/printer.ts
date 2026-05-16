@@ -166,7 +166,7 @@ function printBlock<N extends AstNode>(
       indent([
         line,
         // this is safe since path.node[blockKey][0] has already been validated
-        // @ts-ignore
+        // @ts-expect-error
         path.call(print, blockKey, 0),
       ]),
     ),
@@ -379,7 +379,8 @@ const nodePrinters: {
                 'case',
                 line,
                 // safe to hide print here, `case` will always be non-null
-                caseNode.call(print as any, 'case'),
+                // @ts-expect-error
+                caseNode.call(print, 'case'),
                 line,
               ])
             : ['else ']
@@ -464,15 +465,7 @@ const nodePrinters: {
     if (!path.node.value) return key
 
     // key and value
-    return group([
-      key,
-      ':',
-      indent([
-        line,
-        // value is always true, so this is safe
-        path.call(print as any, 'value'),
-      ]),
-    ])
+    return group([key, ':', indent([line, path.call(print, 'value')])])
   },
   // MARK: throw
   Throw(path, options, print) {
@@ -519,7 +512,8 @@ export const printer: Printer<AstNode> = {
         `Unexpected node type '${path.node.type}' when printing AST`,
       )
     // typecast is safe since fn is valid
-    return fn(path as any, options, print, args)
+    // @ts-expect-error
+    return fn(path, options, print, args)
   },
   printComment(path) {
     // ensure comment-only node

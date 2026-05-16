@@ -239,7 +239,7 @@ export function parse(source: string): ParseResult {
       // MARK: return break
       const type = peeked.value === 'return' ? 'Return' : 'Break'
       advance() // consume return
-      let value: AstExpressionNode | null = null
+      let value: AstExpressionNode | null
       if (
         is('Keyword', 'let') ||
         is('Punctuation', '}') ||

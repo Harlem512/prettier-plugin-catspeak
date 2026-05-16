@@ -165,7 +165,7 @@ export function tokenize(source: string): Token[] {
 
     // MARK: ---com
     if (ch === '-' && peek() === '-') {
-      let comment = advanceMatching((current) => current !== '\n')
+      const comment = advanceMatching((current) => current !== '\n')
       makeToken('Comment', comment, start)
       // consume next token if its a newline (it could be EOF)
       if (current() === '\n') advance() // trailing new line
@@ -274,7 +274,7 @@ export function tokenize(source: string): Token[] {
 
     // MARK: my_var
     if (isIdentifierStart(ch)) {
-      let value = advanceMatching(isIdentifierCharacter)
+      const value = advanceMatching(isIdentifierCharacter)
       const type: TokenType = KEYWORDS.has(value) ? 'Keyword' : 'Identifier'
       makeToken(type, value, start)
       continue
