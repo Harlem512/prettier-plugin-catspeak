@@ -14,7 +14,8 @@ import {
   type StringNode,
   type StructLiteralNode,
   GroupNode,
-  BlockNode,
+  RootNode,
+  CommentPlaceholderNode,
 } from './ast'
 import type { Position } from './lexer'
 import { parse as baseParse } from './parser'
@@ -34,7 +35,7 @@ function parse(
   const input = Array.isArray(str) ? str.join('\n') : str
   const p = baseParse(input)
   expect(p.errors).toHaveLength(errorLength)
-  const block = node<BlockNode>(p.ast, 'Block', 0, input.length, {
+  const block = node<RootNode>(p.ast, 'Root', 0, input.length, {
     isRoot: true,
   })
   expect(
@@ -435,14 +436,16 @@ describe('function expression', () => {
     const res = parse('fun () { }')
     const n = node<FunctionNode>(res.ast.block[0], 'Function', 0, 10)
     expect(n.arguments).toHaveLength(0)
-    expect(n.block).toHaveLength(0)
+    expect(n.block).toHaveLength(1)
+    node<CommentPlaceholderNode>(n.block[0], 'CommentPlaceholder', 10, 10)
   })
 
   it('no args, no body, no parenthesis', () => {
     const res = parse('fun { }')
     const n = node<FunctionNode>(res.ast.block[0], 'Function', 0, 7)
     expect(n.arguments).toHaveLength(0)
-    expect(n.block).toHaveLength(0)
+    expect(n.block).toHaveLength(1)
+    node<CommentPlaceholderNode>(n.block[0], 'CommentPlaceholder', 7, 7)
   })
 
   it('no args', () => {

@@ -1,5 +1,5 @@
 import { AstPath, Doc, ParserOptions, Printer } from 'prettier'
-import { builders } from 'prettier/doc'
+import { builders, utils } from 'prettier/doc'
 import { CommaMode, SemicolonMode } from './options'
 import { AstNode, NodeMap, NodeType } from './parser/ast'
 import { IterProperties, RNull } from './types'
@@ -115,6 +115,41 @@ function joinSemicolon<T extends AstNode>(
   )
 }
 
+function printBlock<N extends AstNode>(
+  path: AstPath<N>,
+  blockKey: IterProperties<N>,
+  print: (path: AstPath<AstNode>) => Doc,
+  options: ParserOptions<AstNode>,
+): Doc {
+  // this cast is always safe since blockKey must be a key of N that resolves to an array
+  const children = path.node[blockKey as keyof N] as AstNode[]
+  // this is always defined since empty blocks always have an internal CommentPlaceholder
+  const firstChild = children[0]
+
+  if (firstChild.type !== 'CommentPlaceholder')
+    return indent([line, joinSemicolon(path, print, options, blockKey)])
+
+  // check if the comment placeholder has comments
+  const hasComments = firstChild.comments && firstChild.comments.length > 0
+  // no comments, don't print anything to prevent text wrapping behavior
+  if (!hasComments) return ''
+
+  // print comment placeholder node so comments can be attached
+  return group(
+    // strip trailing hardline to prevent a weird trailing newline inside the block
+    utils.stripTrailingHardline(
+      indent([
+        line,
+        // this is safe since path.node[blockKey][0] has already been validated
+        // @ts-ignore
+        path.call(print, blockKey, 0),
+      ]),
+    ),
+    // force break so comments get placed on newlines
+    { shouldBreak: true },
+  )
+}
+
 const nodePrinters: {
   [Type in NodeType]: (
     // typescript nonsense for a slightly better type-check
@@ -128,9 +163,9 @@ const nodePrinters: {
   ) => Doc
 } = {
   // comments are printed elsewhere
-  Comment(node) {
+  Comment(path) {
     throw new Error(
-      `Attempted to manually print comment ${JSON.stringify(node.node)}`,
+      `Attempted to manually print comment ${JSON.stringify(path.node)}`,
     )
   },
   // comment placeholder
@@ -138,16 +173,10 @@ const nodePrinters: {
     return ''
   },
   // MARK: block
-  Block(path, options, print) {
+  Root(path, options, print) {
     const body = joinSemicolon(path, print, options, 'block')
-    // non-root node, early return
-    if (!path.node.isRoot) return body
 
-    // check if a fake newline was inserted
-    if (
-      path.node.block.length === 1 &&
-      path.node.block[0].type === 'CommentPlaceholder'
-    ) {
+    if (path.node.block[0].type === 'CommentPlaceholder') {
       // if the only node is a CommentPlaceholder,
       // then this is a comment-only file
       // so don't print the trailing hardline
@@ -242,14 +271,7 @@ const nodePrinters: {
   },
   // MARK: do { }
   Do(path, options, print) {
-    return group([
-      'do {',
-      path.node.block.length > 0
-        ? indent([line, joinSemicolon(path, print, options, 'block')])
-        : '',
-      line,
-      '}',
-    ])
+    return group(['do {', printBlock(path, 'block', print, options), line, '}'])
   },
   // MARK: fun { }
   Function(path, options, print) {
@@ -273,9 +295,7 @@ const nodePrinters: {
               ]),
         ]),
         '{',
-        path.node.block.length > 0
-          ? indent([line, joinSemicolon(path, print, options, 'block')])
-          : '',
+        printBlock(path, 'block', print, options),
         line,
         '}',
       ],
@@ -294,26 +314,11 @@ const nodePrinters: {
         line,
         '{',
       ]),
-      path.node.ifBlock.length > 0
-        ? group([
-            indent([line, joinSemicolon(path, print, options, 'ifBlock')]),
-            line,
-            '}',
-          ])
-        : ' }',
+      group([printBlock(path, 'ifBlock', print, options), line, '}']),
       path.node.elseBlock
         ? [
             ' else {',
-            path.node.elseBlock.length > 0
-              ? group([
-                  indent([
-                    line,
-                    joinSemicolon(path, print, options, 'elseBlock'),
-                  ]),
-                  line,
-                  '}',
-                ])
-              : ' }',
+            group([printBlock(path, 'elseBlock', print, options), line, '}']),
           ]
         : '',
       path.node.ifElseExpression
@@ -348,9 +353,7 @@ const nodePrinters: {
             group([
               caseDoc,
               '{',
-              caseNode.node.block.length > 0
-                ? indent([line, joinSemicolon(path, print, options, 'block')])
-                : '',
+              printBlock(path, 'block', print, options),
               line,
               '}',
             ]),
@@ -439,13 +442,7 @@ const nodePrinters: {
         line,
         '{',
       ]),
-      path.node.block.length > 0
-        ? [
-            indent([line, joinSemicolon(path, print, options, 'block')]),
-            line,
-            '}',
-          ]
-        : ' }',
+      group([printBlock(path, 'block', print, options), line, '}']),
     ])
   },
   // MARK: with
@@ -457,13 +454,7 @@ const nodePrinters: {
         line,
         '{',
       ]),
-      path.node.block.length > 0
-        ? [
-            indent([line, joinSemicolon(path, print, options, 'block')]),
-            line,
-            '}',
-          ]
-        : ' }',
+      group([printBlock(path, 'block', print, options), line, '}']),
     ])
   },
 }
@@ -483,7 +474,7 @@ export const printer: Printer<AstNode> = {
     // ensure comment-only node
     if (path.node.type !== 'Comment') return path.node.type
     // default comment print
-    return path.node.value
+    return path.node.value.trimEnd()
   },
   // required to make prettier's auto-comments work correctly
   // all nodes can have comments
@@ -527,7 +518,7 @@ export const printer: Printer<AstNode> = {
         return [node.left, node.right]
       case 'Return':
         return node.value ? [node.value] : []
-      case 'Block':
+      case 'Root':
         return node.block
       case 'StructLiteral':
         return node.entries

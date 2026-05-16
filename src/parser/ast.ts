@@ -6,15 +6,15 @@ import type { Range } from './lexer'
 
 interface BaseNode {
   range: Range
+  /** IMPORTANT: used by prettier to automatically print comments */
+  comments?: CommentNode[]
 }
 
 // MARK: fake
 
-export interface BlockNode extends BaseNode {
-  type: 'Block'
+export interface RootNode extends BaseNode {
+  type: 'Root'
   block: AstNode[]
-  /** IMPORTANT: used by prettier to automatically print comments */
-  comments?: CommentNode[]
   isRoot: boolean
 }
 
@@ -171,7 +171,7 @@ export interface WhileNode extends BaseNode {
 
 // non-statement, non-expression nodes (used internally)
 export type AstFakeNode =
-  | BlockNode
+  | RootNode
   | CommentNode
   | CommentPlaceholderNode
   | NewlineNode
@@ -209,7 +209,7 @@ export interface ParseError {
 }
 
 export interface ParseResult {
-  ast: BlockNode
+  ast: RootNode
   errors: ParseError[]
 }
 
@@ -217,7 +217,7 @@ export interface ParseResult {
 // MARK: nodemap
 export type NodeMap = {
   // fake nodes
-  Block: BlockNode
+  Root: RootNode
   Comment: CommentNode
   CommentPlaceholder: CommentPlaceholderNode
   Group: GroupNode

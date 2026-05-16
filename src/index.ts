@@ -1,6 +1,6 @@
 import { type Parser, type Printer, type SupportLanguage } from 'prettier'
 import { defaultOptions, options } from './options'
-import type { AstNode, BlockNode, CommentNode } from './parser/ast'
+import type { AstNode, RootNode } from './parser/ast'
 import { parse } from './parser/parser'
 import { printer } from './printer'
 
@@ -19,7 +19,7 @@ export const languages: SupportLanguage[] = [
 // https://prettier.io/docs/en/plugins.html#parsers
 export const parsers: Record<string, Parser<AstNode>> = {
   catspeak: {
-    parse(text): BlockNode {
+    parse(text): RootNode {
       const result = parse(text)
       if (result.errors.length > 0) {
         console.log(result.errors)

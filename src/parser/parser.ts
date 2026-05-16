@@ -40,9 +40,6 @@ export function parse(source: string): ParseResult {
   // advanced is used instead of pos = 0 to skip leading whitespace/comments
   advance()
 
-  /** last-used trivia index */
-  let triviaPos = 0
-
   // MARK: position
   function current(): Token {
     return tokens[pos]
@@ -120,10 +117,7 @@ export function parse(source: string): ParseResult {
           type: 'Newline',
           range: {
             start: firstNewline.range.start,
-            end: {
-              ...token.range.start,
-              offset: token.range.start.offset - 1,
-            },
+            end: token.range.start,
           },
         }
       }
@@ -159,12 +153,10 @@ export function parse(source: string): ParseResult {
 
   // MARK: block
   function parseBlock(): AstNode[] {
-    expect('Punctuation', '{')
+    const start = expect('Punctuation', '{')
     advance()
 
-    // start with leading newlines
-    const leadingNewline = getNewline()
-    const nodes: AstNode[] = leadingNewline ? [leadingNewline] : []
+    const nodes: AstNode[] = []
 
     while (!isAtEnd() && !is('Punctuation', '}')) {
       try {
@@ -177,6 +169,20 @@ export function parse(source: string): ParseResult {
         // check if this is a normal error
         if (!e.range) throw e
       }
+    }
+
+    // remove trailing newline block
+    if (nodes.at(-1)?.type === 'Newline') {
+      nodes.splice(-1)
+    }
+    if (nodes.length === 0) {
+      const end = current().range.end
+      // no nodes, push a placeholder so comments can be attached correctly
+      nodes.push({
+        type: 'CommentPlaceholder',
+        // range is wonky so comments are all printed at the start of the block
+        range: { start: end, end },
+      })
     }
 
     expect('Punctuation', '}')
@@ -892,9 +898,8 @@ export function parse(source: string): ParseResult {
   }
 
   // MARK: RUN
-  // start with leading newlines
-  const leadingNewline = getNewline()
-  const nodes: AstNode[] = leadingNewline ? [leadingNewline] : []
+  // don't accept leading newline nodes
+  const nodes: AstNode[] = []
 
   while (!isAtEnd()) {
     try {
@@ -912,25 +917,24 @@ export function parse(source: string): ParseResult {
     }
   }
 
-  if (nodes.length === 1 && nodes[0].type === 'Newline') {
-    // if the only node in the root node is a newline, then remove it
-    // so it can be replaced with a CommentPlaceholder node (the doc is empty)
-    nodes.pop()
+  // remove trailing newline block
+  if (nodes.at(-1)?.type === 'Newline') {
+    nodes.splice(-1)
   }
 
   if (nodes.length === 0) {
-    // no nodes, push a fake newline node
-    // so comments can be attached correctly
+    const end = current().range.end
+    // no nodes, push a placeholder so comments can be attached correctly
     nodes.push({
       type: 'CommentPlaceholder',
       // range is wonky so comments are all printed at the start
-      range: { start: current().range.end, end: current().range.end },
+      range: { start: end, end },
     })
   }
 
   return {
     ast: {
-      type: 'Block',
+      type: 'Root',
       block: nodes,
       comments,
       isRoot: true,

@@ -348,11 +348,27 @@ describe('comments', () => {
       '-- a\n\n-- b\n\n-- c\na',
     ),
   )
-  it('a', test('-- a\n\n\n--b', '-- a\n\n--b'))
-  it('b', test('\n-- a\n\n\n--b', '-- a\n\n--b'))
-  it('c', test('\n\n-- a\n\n\n--b', '-- a\n\n--b'))
-  it('d', test('-- a\n\n\n--b\n\n\n\n\n', '-- a\n\n--b\n'))
-  it('e', test('-- a\n\n\n--b\n', '-- a\n\n--b'))
+  it('root a', test('-- a\n\n\n--b', '-- a\n\n--b'))
+  it('root b', test('\n-- a\n\n\n--b', '-- a\n\n--b'))
+  it('root c', test('\n\n-- a\n\n\n--b', '-- a\n\n--b'))
+  it('root d', test('\n\n\n\n\n\n-- a\n\n\n--b', '-- a\n\n--b'))
+  it('root e', test('-- a\n\n\n--b', '-- a\n\n--b'))
+  it('root f', test('-- a\n\n\n--b\n\n\n', '-- a\n\n--b\n'))
+
+  it('block a', test('do{--a\n}', 'do {\n\t--a\n}'))
+  it('block b', test('do{\n--a\n}', 'do {\n\t--a\n}'))
+  it('block c', test('do{\n\n--a\n}', 'do {\n\t--a\n}'))
+  it('block d', test('do{\n\n\n\n\n--a\n}', 'do {\n\t--a\n}'))
+  it('block e', test('do{--a\n\n}', 'do {\n\t--a\n}'))
+  it('block f', test('do{\n\n\n\n\n--a\n}', 'do {\n\t--a\n}'))
+
+  it('block 2 a', test('do{--a\n--b\n}', 'do {\n\t--a\n\t--b\n}'))
+  it('block 2 b', test('do{--a\n\n\n\n\n--b\n}', 'do {\n\t--a\n\n\t--b\n}'))
+
+  it(
+    'comment inside single item block',
+    test('do{--a\na}', 'do {\n\t--a\n\ta\n}'),
+  )
 })
 
 // MARK: newlines
@@ -363,4 +379,6 @@ describe('newlines', () => {
 
   it('block', test('do{c\n--a\n\n\n\n--b\n}', 'do {\n\tc\n\t--a\n\n\t--b\n}'))
   it('root', test('c\n--a\n\n\n\n--b\n', 'c\n--a\n\n--b'))
+  it('before block, omit lines', test('do{\n\n\n\n\n\na}', 'do { a }'))
+  it('after block, omit lines', test('do{a\n\n\n\n\n\n}', 'do { a }'))
 })
