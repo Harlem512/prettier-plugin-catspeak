@@ -88,7 +88,6 @@ let fn = fun () { }
 - VSCode extension
 - Add parsing/formatting for try-catch blocks
 - Add an option for wrapped operator placement (start or end of line)
-- ensure newline nodes dont cause semicolon issues `a\n\n[b]`
 
 ## "Reference Material"
 

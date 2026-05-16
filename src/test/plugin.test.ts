@@ -81,12 +81,19 @@ describe('let statement', () => {
 // MARK: root
 describe('root statement', () => {
   it('simple', test('let a let long', 'let a\nlet long'))
-  it(
-    'required semicolon for array literal',
-    test('let a    \n;[a]', 'let a;\n[a]'),
-  )
-  it('required semicolon for return', test('return\n;b', 'return;\nb'))
-  it('required semicolon for break', test('break\n;b', 'break;\nb'))
+  describe('semicolons', () => {
+    it('array literal', test('let a    \n;[a]', 'let a;\n[a]'))
+    it(
+      'array literal with newline',
+      test('let a    \n\n\n\n\n;[a]', 'let a;\n\n[a]'),
+    )
+    it(
+      'array literal with newline before comment',
+      test('let a    \n\n\n\n\n;[a]', 'let a;\n\n[a]'),
+    )
+    it('return', test('return\n;b', 'return;\nb'))
+    it('break', test('break\n;b', 'break;\nb'))
+  })
 })
 
 // MARK: accessor
@@ -102,35 +109,38 @@ describe('array literal', () => {
   it('simple', test('[    a b]', '[a, b]'))
   it('long', test('[    long b]', '[\n\tlong,\n\tb,\n]'))
   it('empty', test('[\n]', '[]'))
-  // options tests
-  it(
-    'short no commas',
-    test('[   long a]', '[\n\tlong\n\ta\n]', { commaMode: CommaMode.NONE }),
-  )
-  it(
-    'short no commas but required comma',
-    test('[   long, [a]\n,]', '[\n\tlong,\n\t[a]\n]', {
-      commaMode: CommaMode.NONE,
-    }),
-  )
-  it(
-    'short no commas but required comma on a single line',
-    test('[   a, [a]\n,]', '[a, [a]]', {
-      commaMode: CommaMode.NONE,
-    }),
-  )
-  it(
-    'normal on a single line',
-    test('[   a,b\n,]', '[a, b]', {
-      commaMode: CommaMode.NORMAL,
-    }),
-  )
-  it(
-    'normal on a wrapped line',
-    test('[   a,long\n,]', '[\n\ta,\n\tlong\n]', {
-      commaMode: CommaMode.NORMAL,
-    }),
-  )
+  describe('comma tests', () => {
+    // options tests
+    it(
+      'short no commas',
+      test('[   long a]', '[\n\tlong\n\ta\n]', { commaMode: CommaMode.NONE }),
+    )
+    it(
+      'short no commas but required comma',
+      test('[   long, [a]\n,]', '[\n\tlong,\n\t[a]\n]', {
+        commaMode: CommaMode.NONE,
+      }),
+    )
+    it(
+      'short no commas but required comma on a single line',
+      test('[   a, [a]\n,]', '[a, [a]]', {
+        commaMode: CommaMode.NONE,
+      }),
+    )
+    it(
+      'normal on a single line',
+      test('[   a,b\n,]', '[a, b]', {
+        commaMode: CommaMode.NORMAL,
+      }),
+    )
+    it(
+      'normal on a wrapped line',
+      test('[   a,long\n,]', '[\n\ta,\n\tlong\n]', {
+        commaMode: CommaMode.NORMAL,
+      }),
+    )
+  })
+  describe('semicolon tests', () => {})
 })
 
 // MARK: assignment

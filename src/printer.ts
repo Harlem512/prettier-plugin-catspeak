@@ -21,12 +21,16 @@ function indentExp(doc: Doc, options: ParserOptions<AstNode>): Doc {
   return options.doubleIndent ? indent(indent(doc)) : indent(doc)
 }
 
+// MARK: separator
 /**
  * Returns true if these nodes require a separator to disambiguate some statements.
  *
  * Ie. `[ a, [b] ]`
  */
 function requiresSeparator(a: AstNode, b: AstNode): boolean {
+  // newline nodes never require separation
+  if (a.type === 'Newline') return false
+
   // disambiguate accessor and struct expression key
   // `{ a, [b]: b2 }` vs `{ a [b]: [b2] }` (causing syntax error)
   if (a.type === 'StructLiteralEntry' && b.type === 'StructLiteralEntry') {
@@ -51,6 +55,7 @@ function requiresSeparator(a: AstNode, b: AstNode): boolean {
   return false
 }
 
+// MARK: joinComma
 /**
  * Joins an array of nodes, but checks for required leading/trailing commas
  */
@@ -88,6 +93,22 @@ function joinComma<T extends AstNode>(
 }
 
 /**
+ * Gets the next node, ignoring any newline nodes
+ */
+function getNext(path: AstPath<AstNode>): AstNode | undefined {
+  const siblings = path.siblings
+  // no sibling nodes
+  if (!siblings || path.index === null) return undefined
+
+  for (let i = path.index + 1; i < siblings.length; i++) {
+    if (siblings[i].type !== 'Newline') return siblings[i]
+  }
+
+  return undefined
+}
+
+// MARK: joinSemicolon
+/**
  * Joins an array of nodes, but checks for required leading/trailing semicolons
  */
 function joinSemicolon<T extends AstNode>(
@@ -105,16 +126,20 @@ function joinSemicolon<T extends AstNode>(
       // add always-required semicolon
       if (options.semicolonMode === SemicolonMode.ALL) return [child, ';']
 
+      const next = getNext(childNode)
       // no next node, never semicolon
-      return childNode.next &&
-        // nodes require separation, add semicolon
-        requiresSeparator(childNode.node, childNode.next)
-        ? [child, ';']
-        : child
+      if (!next) return child
+
+      // nodes don't require separation
+      if (!requiresSeparator(childNode.node, next)) return child
+
+      // nodes require separation, insert semicolon
+      return [child, ';']
     }, key),
   )
 }
 
+// MARK: printBlock
 function printBlock<N extends AstNode>(
   path: AstPath<N>,
   blockKey: IterProperties<N>,
@@ -150,6 +175,7 @@ function printBlock<N extends AstNode>(
   )
 }
 
+// MARK: PRINTERS
 const nodePrinters: {
   [Type in NodeType]: (
     // typescript nonsense for a slightly better type-check
