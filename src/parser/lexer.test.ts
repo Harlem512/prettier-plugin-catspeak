@@ -1,4 +1,4 @@
-import { tokenize } from './lexer'
+import { tokenize } from './lexer.js'
 
 function tokTypes(source: string, keepWhitespace: boolean = false): string[] {
   return tokenize(source)

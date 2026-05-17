@@ -16,9 +16,9 @@ import {
   GroupNode,
   RootNode,
   CommentPlaceholderNode,
-} from './ast'
-import type { Position } from './lexer'
-import { parse as baseParse } from './parser'
+} from './ast.js'
+import type { Position } from './lexer.js'
+import { parse as baseParse } from './parser.js'
 
 function parse(
   str: string | string[],

@@ -1,8 +1,8 @@
 import { type Parser, type Printer, type SupportLanguage } from 'prettier'
-import { defaultOptions, options } from './options'
-import type { AstNode, RootNode } from './parser/ast'
-import { parse } from './parser/parser'
-import { printer } from './printer'
+import { defaultOptions, options } from './options.js'
+import type { AstNode, RootNode } from './parser/ast.js'
+import { parse } from './parser/parser.js'
+import { printer } from './printer.js'
 
 // MARK: Languages
 // https://prettier.io/docs/en/plugins.html#languages
@@ -22,8 +22,10 @@ export const parsers: Record<string, Parser<AstNode>> = {
     parse(text): RootNode {
       const result = parse(text)
       if (result.errors.length > 0) {
-        console.log(result.errors)
-        throw new Error(JSON.stringify(result.errors[0], undefined, 2))
+        const parseError = result.errors[0]
+        const error = new Error(parseError.message)
+        error.cause = parseError
+        throw error
       }
 
       return result.ast

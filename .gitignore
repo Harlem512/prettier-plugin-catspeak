@@ -1,3 +1,6 @@
+# catspeak test files
+data/
+
 # Logs
 logs
 *.log

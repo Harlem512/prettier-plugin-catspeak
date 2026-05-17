@@ -11,7 +11,6 @@ An unofficial Prettier plugin for formatting Catspeak's `.meow` files. Still a w
 - Comment support using Prettier's builtin plugin comment algorithm (it tries its best).
 - Doesn't format files with syntax errors.
 - Test cases!
-- A few limitations (its a work in progress).
 
 ## Options
 
@@ -97,12 +96,9 @@ x = foo +
     bar
 ```
 
-## Future Plans
-
-- VSCode extension
-
 ## "Reference Material"
 
 - Astro's [Prettier plugin](https://github.com/withastro/prettier-plugin-astro)
 - Catspeak's [GML Parser code](https://github.com/katsaii/catspeak-lang/blob/dev-3.2.1-with-inst-fix/src-lts/scripts/scr_catspeak_parser/scr_catspeak_parser.gml) (the parser is mostly transpiled from GML)
+- Jinxdash's [Rust Prettier extension](https://github.com/jinxdash/prettier-plugin-rust/tree/master) (licensed under MIT, for extension template)
 - `klapro`'s ["Catspeak extension"](https://github.com/klapro/catspeak-vscode-ext) (licensed under MIT, for the lexer's basic structure and test cases)

@@ -19,8 +19,14 @@
   "license": "MIT",
   "author": "Harlem512",
   "type": "module",
-  "main": "src/index.ts",
+  "exports": {
+    ".": "./out/index.js",
+    "./package.json": "./package.json"
+  },
   "scripts": {
+    "build": "tsc -b --declaration",
+    "extension-watch": "npm run build && cd vscode-extension && npm run watch",
+    "extension-build": "npm run build && cd vscode-extension && npm run compile",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest"
   },
   "dependencies": {

@@ -2,7 +2,7 @@
  * Catspeak AST Node Definitions
  */
 
-import type { Range } from './lexer'
+import type { Range } from './lexer.js'
 
 interface BaseNode {
   range: Range

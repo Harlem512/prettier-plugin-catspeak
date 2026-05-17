@@ -14,8 +14,8 @@ import type {
   ParseResult,
   StringNode,
   StructLiteralNode,
-} from './ast'
-import { tokenize, type Range, type Token, type TokenType } from './lexer'
+} from './ast.js'
+import { tokenize, type Range, type Token, type TokenType } from './lexer.js'
 
 export function parse(source: string): ParseResult {
   const tokens = tokenize(source)

@@ -1,8 +1,8 @@
 import { AstPath, Doc, ParserOptions, Printer } from 'prettier'
 import { builders, utils } from 'prettier/doc'
-import { CommaMode, SemicolonMode } from './options'
-import { AstNode, NodeMap, NodeType } from './parser/ast'
-import { IterProperties, RNull } from './types'
+import { CommaMode, SemicolonMode } from './options.js'
+import { AstNode, NodeMap, NodeType } from './parser/ast.js'
+import { IterProperties, RNull } from './types.js'
 
 // builder utilities
 const { group, indent, join, line, softline, hardline, ifBreak } = builders
