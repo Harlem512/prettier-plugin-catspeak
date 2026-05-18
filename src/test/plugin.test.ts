@@ -1,6 +1,6 @@
 import { format, Options } from 'prettier'
 import * as CatspeakPlugin from '..'
-import { CommaMode } from '../options'
+import { CatspeakOptions, CommaMode } from '../options'
 
 // a long identifier to ensure the line wraps
 const long =
@@ -73,9 +73,9 @@ describe('let statement', () => {
   it('simple', test('let a\n=\nb', 'let a = b'))
   it('no value', test('let\na', 'let a'))
   it('long identifier, no value', test('let\nlong', 'let long'))
-  it('long identifier', test('let long=a', 'let long =\n\t\ta'))
-  it('long value', test('let a=long', 'let a =\n\t\tlong'))
-  it('double long', test('let long=long', 'let long =\n\t\tlong'))
+  it('long identifier', test('let long\n\t\t=a', 'let long = a'))
+  it('long value', test('let a=\n\t\tlong', 'let a = long'))
+  it('double long', test('let \n\t\tlong=long', 'let long = long'))
 })
 
 // MARK: root
@@ -98,10 +98,18 @@ describe('root statement', () => {
 
 // MARK: accessor
 describe('accessor', () => {
-  it('simple', test('a         [\nb\n]', 'a[b]'))
-  it('long key', test('a   [\nlong]', 'a[\n\t\tlong\n]'))
-  it('long array', test('long   [\na]', 'long[\n\t\ta\n]'))
-  it('long array and key', test('long   [\nlong]', 'long[\n\t\tlong\n]'))
+  describe('bracket', () => {
+    it('simple', test('a         [\nb\n]', 'a[b]'))
+    it('long key', test('a   [\nlong]', 'a[\n\t\tlong\n]'))
+    it('long array', test('long   [\na]', 'long[\n\t\ta\n]'))
+    it('long array and key', test('long   [\nlong]', 'long[\n\t\tlong\n]'))
+  })
+  describe('dot', () => {
+    it('simple', test('a         .\nb\n', 'a.b'))
+    it('long key', test('a.   \nlong', 'a\n\t\t.long'))
+    it('long array', test('long   .\na', 'long\n\t\t.a'))
+    it('long array and key', test('long   .\nlong', 'long\n\t\t.long'))
+  })
 })
 
 // MARK: array literal
@@ -146,8 +154,9 @@ describe('array literal', () => {
 // MARK: assignment
 describe('assignment', () => {
   it('simple', test('x=a', 'x = a'))
-  it('long identifier', test('long=a', 'long\n\t=\n\ta'))
-  it('long value', test('a=long', 'a\n\t=\n\tlong'))
+  it('long identifier', test('long=\n\na', 'long = a'))
+  it('long value', test('a\n\n=long', 'a = long'))
+  it('long identifier, long value', test('long=\n\nlong', 'long = long'))
   // it(
   //   'comments',
   //   test('--\na--\n\n=--\nb--\n--', '--\na --\n--\n\t=\n\tb --\n--'),
@@ -208,7 +217,10 @@ describe('fun', () => {
   )
   it('empty function block', test('fun{}', 'fun () { }'))
   // options
-  it('empty function arguments', test('fun {}', 'fun () { }'))
+  it(
+    'empty function arguments',
+    test('fun {}', 'fun { }', { emptyFunctionArguments: true }),
+  )
 })
 
 // MARK: if
@@ -315,7 +327,7 @@ describe('operator', () => {
   })
 
   describe("don't wrap operator", () => {
-    const o = { wrapBinaryOperators: false }
+    const o: Partial<CatspeakOptions> = { wrapBinaryOperators: false }
     it('a + long', test('a+long', 'a +\n\t\tlong', o))
     it('long + b', test('long+b', 'long +\n\t\tb', o))
     it('long + long', test('long+long', 'long +\n\t\tlong', o))
@@ -334,13 +346,13 @@ describe('struct literal', () => {
   it('empty', test('{\n\t}', '{}'))
   it('no value', test('{\n\ta\n}', '{ a }'))
   it('key-value', test('{a:b}', '{ a: b }'))
-  it('long key', test('{long:a}', '{\n\tlong:\n\t\ta,\n}'))
-  it('long value', test('{a:long}', '{\n\ta:\n\t\tlong,\n}'))
-  it('long key value', test('{long:long}', '{\n\tlong:\n\t\tlong,\n}'))
+  it('long key', test('{long:a}', '{\n\tlong: a,\n}'))
+  it('long value', test('{a:long}', '{\n\ta: long,\n}'))
+  it('long key value', test('{long:long}', '{\n\tlong: long,\n}'))
   it('expression key', test('{["a"]:b}', '{ "a": b }'))
   it(
     'long expression key',
-    test('{[long()]:b}', '{\n\t[\n\t\t\tlong()\n\t]:\n\t\tb,\n}'),
+    test('{[long()]:b}', '{\n\t[\n\t\t\tlong()\n\t]: b,\n}'),
   )
   // comma between keys
   it(
@@ -359,7 +371,7 @@ describe('throw', () => {
 // MARK: unary
 describe('unary', () => {
   it('normal', test('!\n\nlong', '!long'))
-  it('with assignment', test('let long=!long', 'let long =\n\t\t!long'))
+  it('with assignment', test('let long=!long', 'let long = !long'))
 })
 
 // MARK: while
@@ -439,4 +451,26 @@ describe('newlines', () => {
   it('root', test('c\n--a\n\n\n\n--b\n', 'c\n--a\n\n--b'))
   it('before block, omit lines', test('do{\n\n\n\n\n\na}', 'do { a }'))
   it('after block, omit lines', test('do{a\n\n\n\n\n\n}', 'do { a }'))
+})
+
+// MARK: snippets
+describe('code snippets', () => {
+  it(
+    'let declare a function',
+    test(
+      'let my_func = fun (a,b) {long}',
+      'let my_func = fun (a, b) {\n\tlong\n}',
+    ),
+  )
+  it(
+    'assign a function',
+    test('my_func = fun (a,b) {long}', 'my_func = fun (a, b) {\n\tlong\n}'),
+  )
+  it(
+    'assign a function in a struct',
+    test(
+      'let x={key:fun (a,b) {long}}',
+      'let x = {\n\tkey: fun (a, b) {\n\t\tlong\n\t},\n}',
+    ),
+  )
 })

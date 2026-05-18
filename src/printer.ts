@@ -228,28 +228,37 @@ const nodePrinters: {
   },
   // MARK: let
   LetStatement(path, options, print) {
-    // simple option
+    // no value, only identifier
     if (!path.node.value) return ['let ', path.call(print, 'identifier')]
 
-    // let a = b
-    return group([
-      // identifier always fits on a single line
-      ['let ', path.call(print, 'identifier'), ' ='],
-      // indent
-      indentExp([line, path.call(print, 'value')], options),
-    ])
+    // assignments always fit on a single line
+    return [
+      'let ',
+      path.call(print, 'identifier'),
+      ' = ',
+      path.call(print, 'value'),
+    ]
   },
   // MARK: a[b]
   Accessor(path, options, print) {
-    return group([
-      path.call(print, 'collection'),
-      group([
-        '[',
-        indentExp([softline, path.call(print, 'key')], options),
-        softline,
-        ']',
-      ]),
-    ])
+    if (path.node.isIdentifier) {
+      // a.b
+      return group([
+        path.call(print, 'collection'),
+        indentExp([softline, '.', path.call(print, 'key')], options),
+      ])
+    } else {
+      // a[b]
+      return group([
+        path.call(print, 'collection'),
+        group([
+          '[',
+          indentExp([softline, path.call(print, 'key')], options),
+          softline,
+          ']',
+        ]),
+      ])
+    }
   },
   // MARK: [ array ]
   ArrayLiteral(path, options, print) {
@@ -262,10 +271,14 @@ const nodePrinters: {
   },
   // MARK: a = b
   Assignment(path, options, print) {
-    return group([
+    // assignment always fits on one line
+    return [
       path.call(print, 'identifier'),
-      indent([line, path.node.operator, line, path.call(print, 'value')]),
-    ])
+      ' ',
+      path.node.operator,
+      ' ',
+      path.call(print, 'value'),
+    ]
   },
   // MARK: break
   Break(path, options, print) {
@@ -311,30 +324,27 @@ const nodePrinters: {
   },
   // MARK: fun { }
   Function(path, options, print) {
+    // fun ... {
+    const args =
+      options.emptyFunctionArguments && path.node.arguments.length === 0
+        ? 'fun {'
+        : [
+            'fun (',
+            group(
+              indentExp(
+                [softline, joinComma(path, 'arguments', print, options)],
+                options,
+              ),
+            ),
+            softline,
+            ') {',
+          ]
+
     return group([
-      [
-        group([
-          'fun ',
-          // empty function block part
-          ...(path.node.arguments.length > 0 && options.emptyFunctionArguments
-            ? []
-            : [
-                '(',
-                group(
-                  indentExp(
-                    [softline, joinComma(path, 'arguments', print, options)],
-                    options,
-                  ),
-                ),
-                softline,
-                ') ',
-              ]),
-        ]),
-        '{',
-        printBlock(path, 'block', print, options),
-        line,
-        '}',
-      ],
+      group(args),
+      printBlock(path, 'block', print, options),
+      line,
+      '}',
     ])
   },
   // MARK: foo
@@ -458,14 +468,14 @@ const nodePrinters: {
       keyType !== 'Number' &&
       keyType !== 'String'
     ) {
-      key = group(['[', indentExp([softline, key], options), softline, ']'])
+      key = ['[', indentExp([softline, key], options), softline, ']']
     }
 
     // key only
     if (!path.node.value) return key
 
     // key and value
-    return group([key, ':', indent([line, path.call(print, 'value')])])
+    return [key, ': ', path.call(print, 'value')]
   },
   // MARK: throw
   Throw(path, options, print) {

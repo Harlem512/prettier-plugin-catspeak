@@ -57,6 +57,7 @@ export interface AccessorNode extends BaseNode {
   type: 'Accessor'
   collection: AstExpressionNode
   key: AstExpressionNode
+  isIdentifier: boolean
 }
 
 export interface ArrayLiteralNode extends BaseNode {

@@ -718,6 +718,7 @@ export function parse(source: string): ParseResult {
           type: 'Accessor',
           collection: result,
           key,
+          isIdentifier: false,
           range: getRange(start),
         }
       } else if (is('Punctuation', '.')) {
@@ -734,6 +735,7 @@ export function parse(source: string): ParseResult {
           type: 'Accessor',
           collection: result,
           key,
+          isIdentifier: true,
           range: getRange(start, key),
         }
       } else {
