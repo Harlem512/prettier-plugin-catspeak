@@ -31,6 +31,10 @@ export interface Token {
   range: Range
 }
 
+export interface LexerOptions {
+  enableCatchThrow?: boolean
+}
+
 const KEYWORDS = new Set([
   'let',
   'fun',
@@ -41,8 +45,6 @@ const KEYWORDS = new Set([
   'return',
   'break',
   'continue',
-  'throw', // reserved but not used in 3.1.2
-  'catch', // reserved but not used in 3.1.2
   'do',
   'match',
   'case',
@@ -61,6 +63,11 @@ const KEYWORDS = new Set([
   'impl', // reserved but not used
   'params', // reserved but not used
   'loop', // reserved but not used
+])
+
+const KEYWORDS_CATCH_THROW = new Set([
+  'throw', // >=3.2
+  'catch', // >=3.2
 ])
 
 // Two-character operators (order matters for matching)
@@ -98,7 +105,12 @@ const SINGLE_CHAR_OPERATORS = new Set([
 
 const PUNCTUATION = new Set(['(', ')', '[', ']', '{', '}', ',', ';', '.', ':'])
 
-export function tokenize(source: string): Token[] {
+export function tokenize(source: string, options?: LexerOptions): Token[] {
+  const keywords =
+    (options?.enableCatchThrow ?? true)
+      ? new Set([...KEYWORDS, ...KEYWORDS_CATCH_THROW])
+      : KEYWORDS
+
   const tokens: Token[] = []
   let pos = 0
   let line = 0
@@ -275,7 +287,7 @@ export function tokenize(source: string): Token[] {
     // MARK: my_var
     if (isIdentifierStart(ch)) {
       const value = advanceMatching(isIdentifierCharacter)
-      const type: TokenType = KEYWORDS.has(value) ? 'Keyword' : 'Identifier'
+      const type: TokenType = keywords.has(value) ? 'Keyword' : 'Identifier'
       makeToken(type, value, start)
       continue
     }

@@ -19,8 +19,8 @@ export const languages: SupportLanguage[] = [
 // https://prettier.io/docs/en/plugins.html#parsers
 export const parsers: Record<string, Parser<AstNode>> = {
   catspeak: {
-    parse(text): RootNode {
-      const result = parse(text)
+    parse(text, options): RootNode {
+      const result = parse(text, { enableCatchThrow: options.parseCatchThrow })
       if (result.errors.length > 0) {
         const parseError = result.errors[0]
         const error = new Error(parseError.message)

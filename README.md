@@ -96,6 +96,20 @@ x = foo +
     bar
 ```
 
+## parseCatchThrow
+
+Version 3.2.0 of Catspeak introduces the `throw` and `catch` expressions and their keywords.
+
+```catspeak
+-- parseCatchThrow = true
+let throw -- errors
+throw "hello" -- formatted as an expression
+
+-- parseCatchThrow = false
+let throw -- no error
+throw "hello" -- formatted as two no-op expressions
+```
+
 ## "Reference Material"
 
 - Astro's [Prettier plugin](https://github.com/withastro/prettier-plugin-astro)

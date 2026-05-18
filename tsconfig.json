@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "outDir": "./out",
     "rootDir": "./src",
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "include": ["src"],
   "exclude": ["node_modules"]

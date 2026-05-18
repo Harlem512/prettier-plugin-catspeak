@@ -29,6 +29,8 @@ export interface CatspeakOptions {
   emptyFunctionArguments: boolean
   /** if operators should be wrapped with their second expression */
   wrapBinaryOperators: boolean
+  /** if catch-throw expressions should be parsed */
+  parseCatchThrow: boolean
 }
 
 // adds catspeak options to the formatter
@@ -98,6 +100,13 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
     description:
       'If enabled, wrapped binary operation expressions will place their operator on a newline before the second operand.',
   },
+  parseCatchThrow: {
+    category: 'catspeak',
+    type: 'boolean',
+    default: true,
+    description:
+      'If enabled, catch and throw expressions will be parsed and both keywords will be forbidden as identifiers.',
+  },
 }
 
 // MARK: Default Options
@@ -107,4 +116,5 @@ export const defaultOptions: CatspeakOptions = {
   semicolonMode: SemicolonMode.REQUIRED,
   emptyFunctionArguments: false,
   wrapBinaryOperators: true,
+  parseCatchThrow: true,
 }

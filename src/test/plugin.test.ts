@@ -179,6 +179,7 @@ describe('call', () => {
   it('no arguments', test('a\n(\n)', 'a()'))
   it('long name, no arguments', test('long\n(\n)', 'long()'))
   it('long name, new, no arguments', test('new long\n(\n)', 'new long()'))
+  it('chained call', test('a\n\t()\n()', 'a()()'))
 })
 
 // MARK: catch
@@ -319,6 +320,7 @@ describe('match', () => {
 // MARK: operator
 describe('operator', () => {
   it('simple', test('a+b*c', 'a + b * c'))
+  it('chained operator', test('a\n\n\tand\n\n\tb and c', 'a and b and c'))
 
   describe('wrap operator', () => {
     it('a + long', test('a+long', 'a\n\t\t+ long'))
@@ -471,6 +473,18 @@ describe('code snippets', () => {
     test(
       'let x={key:fun (a,b) {long}}',
       'let x = {\n\tkey: fun (a, b) {\n\t\tlong\n\t},\n}',
+    ),
+  )
+  it(
+    'if and',
+    test(
+      `if !a()
+      and b
+      and c
+    {
+     long
+    }`,
+      `if !a() and b and c {\n\tlong\n}`,
     ),
   )
 })

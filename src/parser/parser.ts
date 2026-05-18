@@ -15,10 +15,16 @@ import type {
   StringNode,
   StructLiteralNode,
 } from './ast.js'
-import { tokenize, type Range, type Token, type TokenType } from './lexer.js'
+import {
+  LexerOptions,
+  tokenize,
+  type Range,
+  type Token,
+  type TokenType,
+} from './lexer.js'
 
-export function parse(source: string): ParseResult {
-  const tokens = tokenize(source)
+export function parse(source: string, options?: LexerOptions): ParseResult {
+  const tokens = tokenize(source, options)
   const errors: ParseError[] = []
   const comments: CommentNode[] = tokens
     .filter((t) => t.type === 'Comment')
@@ -26,9 +32,6 @@ export function parse(source: string): ParseResult {
       type: 'Comment',
       value: n.value,
       range: n.range,
-      leading: true,
-      leadingTrivia: null,
-      trailingTrivia: null,
     }))
 
   /** current token index */
@@ -169,6 +172,7 @@ export function parse(source: string): ParseResult {
       } catch (e: any) {
         // check if this is a normal error
         if (!e.range) throw e
+        if (!isAtEnd()) advance()
       }
     }
 
@@ -475,14 +479,14 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpLogicalOr(): AstExpressionNode {
-    const result = parseOpLogicalAnd()
+    let result = parseOpLogicalAnd()
     while (true) {
       if (is('Keyword', 'or') || is('Keyword', 'xor')) {
         // MARK: or xor
         const op = current().value
         advance() // consume or/xor
         const right = parseOpLogicalAnd()
-        return {
+        result = {
           type: 'Operator',
           left: result,
           right,
@@ -496,13 +500,13 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpLogicalAnd(): AstExpressionNode {
-    const result = parseOpPipe()
+    let result = parseOpPipe()
     while (true) {
       if (is('Keyword', 'and')) {
         // MARK: and
         advance() // consume and
         const right = parseOpPipe()
-        return {
+        result = {
           type: 'Operator',
           left: result,
           right,
@@ -516,14 +520,14 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpPipe(): AstExpressionNode {
-    const result = parseOpEquality()
+    let result = parseOpEquality()
     while (true) {
       if (is('Operator', '|>') || is('Operator', '<|')) {
         // MARK: |> <|
         const resultIsName = current().value === '|>'
         advance() // consume pipe
         const other = parseOpEquality()
-        return {
+        result = {
           type: 'Call',
           fun: resultIsName ? result : other,
           arguments: resultIsName ? [other] : [result],
@@ -537,14 +541,14 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpEquality(): AstExpressionNode {
-    const result = parseOpRelational()
+    let result = parseOpRelational()
     while (true) {
       if (is('Operator', '==') || is('Operator', '!=')) {
         // MARK: == !=
         const relation = current().value
         advance() // consume op
         const right = parseOpRelational()
-        return {
+        result = {
           type: 'Operator',
           left: result,
           right,
@@ -558,7 +562,7 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpRelational(): AstExpressionNode {
-    const result = parseOpBitwise()
+    let result = parseOpBitwise()
     while (true) {
       if (
         is('Operator', '<') ||
@@ -570,7 +574,7 @@ export function parse(source: string): ParseResult {
         const op = current().value
         advance() // consume op
         const right = parseOpBitwise()
-        return {
+        result = {
           type: 'Operator',
           left: result,
           right,
@@ -584,7 +588,7 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpBitwise(): AstExpressionNode {
-    const result = parseOpAdd()
+    let result = parseOpAdd()
     while (true) {
       if (
         is('Operator', '&') ||
@@ -597,7 +601,7 @@ export function parse(source: string): ParseResult {
         const op = current().value
         advance() // consume op
         const right = parseOpAdd()
-        return {
+        result = {
           type: 'Operator',
           left: result,
           right,
@@ -611,14 +615,14 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpAdd(): AstExpressionNode {
-    const result = parseOpMultiply()
+    let result = parseOpMultiply()
     while (true) {
       if (is('Operator', '+') || is('Operator', '-')) {
         // MARK: + -
         const op = current().value
         advance() // consume op
         const right = parseOpMultiply()
-        return {
+        result = {
           type: 'Operator',
           left: result,
           right,
@@ -632,7 +636,7 @@ export function parse(source: string): ParseResult {
   }
 
   function parseOpMultiply(): AstExpressionNode {
-    const result = parseOpUnary()
+    let result = parseOpUnary()
     while (true) {
       if (
         is('Operator', '*') ||
@@ -644,7 +648,7 @@ export function parse(source: string): ParseResult {
         const op = current().value
         advance() // consume op
         const right = parseOpUnary()
-        return {
+        result = {
           type: 'Operator',
           left: result,
           right,
@@ -946,9 +950,7 @@ export function parse(source: string): ParseResult {
     } catch (e: any) {
       // check if this is a normal error
       if (!e.range) throw e
-      if (!isAtEnd()) {
-        advance()
-      }
+      if (!isAtEnd()) advance()
     }
   }
 
