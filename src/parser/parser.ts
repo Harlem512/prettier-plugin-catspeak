@@ -165,7 +165,15 @@ export function parse(source: string, options?: LexerOptions): ParseResult {
     while (!isAtEnd() && !is('Punctuation', '}')) {
       try {
         const statement = parseStatement()
-        if (statement) nodes.push(statement)
+
+        if (statement) {
+          nodes.push(statement)
+        } else {
+          // suppress multiple newlines in a row
+          // check goes here because if statement is a node, then
+          // the last node is never a newline
+          if (nodes.at(-1)?.type === 'Newline') continue
+        }
 
         const leadingNewline = getNewline()
         if (leadingNewline) nodes.push(leadingNewline)
@@ -943,7 +951,15 @@ export function parse(source: string, options?: LexerOptions): ParseResult {
   while (!isAtEnd()) {
     try {
       const statement = parseStatement()
-      if (statement) nodes.push(statement)
+
+      if (statement) {
+        nodes.push(statement)
+      } else {
+        // suppress multiple newlines in a row
+        // check goes here because if statement is a node, then
+        // the last node is never a newline
+        if (nodes.at(-1)?.type === 'Newline') continue
+      }
 
       const leadingNewline = getNewline()
       if (leadingNewline) nodes.push(leadingNewline)

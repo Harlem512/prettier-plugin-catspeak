@@ -92,6 +92,11 @@ describe('root statement', () => {
     it('return', test('return\n;b', 'return;\nb'))
     it('break', test('break\n;b', 'break;\nb'))
   })
+  describe('all semicolons', () => {
+    const o: Options = { printSemicolons: true }
+    it('only semicolons', test(';\n\n\n\n\n;\n\n\n\n\n\n', '', o))
+    it('newline semicolons', test('a\n\n\n\n\n;\n\n\n\n\n\n', 'a;', o))
+  })
 })
 
 // MARK: accessor

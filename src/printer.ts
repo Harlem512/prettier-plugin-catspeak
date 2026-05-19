@@ -124,7 +124,14 @@ function joinSemicolon<T extends AstNode>(
       const child = print(childNode)
 
       // add always-required semicolon
-      if (options.printSemicolons) return [child, ';']
+      if (options.printSemicolons) {
+        // don't print semicolons for empty nodes
+        const childType = childNode.node.type
+        if (childType === 'Newline' || childType === 'CommentPlaceholder')
+          return child
+
+        return [child, ';']
+      }
 
       const next = getNext(childNode)
       // no next node, never semicolon
