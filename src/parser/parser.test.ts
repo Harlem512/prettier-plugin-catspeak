@@ -26,7 +26,7 @@ function parse(
   errorLength: number = 0,
 ): ParseResult {
   const input = Array.isArray(str) ? str.join('\n') : str
-  const p = baseParse(input)
+  const p = baseParse(input, { includePlaceholders: true })
   expect(p.errors).toHaveLength(errorLength)
   const block = node<RootNode>(p.ast, 'Root', 0, input.length, {
     isRoot: true,

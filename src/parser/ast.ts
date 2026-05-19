@@ -187,10 +187,11 @@ export type AstFakeNode =
   | RootNode
   | CommentNode
   | CommentPlaceholderNode
-  | NewlineNode
   | StructLiteralEntryNode
 
 export type AstExpressionNode =
+  | NewlineNode
+  //
   | AccessorNode
   | ArrayLiteralNode
   | AssignmentNode

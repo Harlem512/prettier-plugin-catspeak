@@ -23,7 +23,14 @@ import {
   type TokenType,
 } from './lexer.js'
 
-export function parse(source: string, options?: LexerOptions): ParseResult {
+export interface ParserOptions {
+  includePlaceholders?: boolean
+}
+
+export function parse(
+  source: string,
+  options?: LexerOptions & ParserOptions,
+): ParseResult {
   const tokens = tokenize(source, options)
   const errors: ParseError[] = []
   const comments: CommentNode[] = tokens
@@ -174,6 +181,7 @@ export function parse(source: string, options?: LexerOptions): ParseResult {
           // the last node is never a newline
           if (nodes.at(-1)?.type === 'Newline') continue
         }
+        if (!options?.includePlaceholders) continue
 
         const leadingNewline = getNewline()
         if (leadingNewline) nodes.push(leadingNewline)
@@ -188,7 +196,7 @@ export function parse(source: string, options?: LexerOptions): ParseResult {
     if (nodes.at(-1)?.type === 'Newline') {
       nodes.splice(-1)
     }
-    if (nodes.length === 0) {
+    if (nodes.length === 0 && options?.includePlaceholders) {
       const end = current().range.end
       // no nodes, push a placeholder so comments can be attached correctly
       nodes.push({
@@ -839,7 +847,13 @@ export function parse(source: string, options?: LexerOptions): ParseResult {
       while (!is('Punctuation', ']') && !is('EOF')) {
         values.push(parseExpression())
         if (is('Punctuation', ',')) advance()
+
+        // newline op between array entries
+        if (!options?.includePlaceholders) continue
+        const leadingNewline = getNewline()
+        if (leadingNewline) values.push(leadingNewline)
       }
+
       expect('Punctuation', ']')
       advance() // consume ]
 
@@ -960,6 +974,7 @@ export function parse(source: string, options?: LexerOptions): ParseResult {
         // the last node is never a newline
         if (nodes.at(-1)?.type === 'Newline') continue
       }
+      if (!options?.includePlaceholders) continue
 
       const leadingNewline = getNewline()
       if (leadingNewline) nodes.push(leadingNewline)
@@ -975,7 +990,7 @@ export function parse(source: string, options?: LexerOptions): ParseResult {
     nodes.splice(-1)
   }
 
-  if (nodes.length === 0) {
+  if (nodes.length === 0 && options?.includePlaceholders) {
     const end = current().range.end
     // no nodes, push a placeholder so comments can be attached correctly
     nodes.push({

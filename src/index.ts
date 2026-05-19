@@ -20,7 +20,10 @@ export const languages: SupportLanguage[] = [
 export const parsers: Record<string, Parser<AstNode>> = {
   catspeak: {
     parse(text, options): RootNode {
-      const result = parse(text, { enableCatchThrow: options.parseCatchThrow })
+      const result = parse(text, {
+        enableCatchThrow: options.parseCatchThrow,
+        includePlaceholders: true,
+      })
       if (result.errors.length > 0) {
         const parseError = result.errors[0]
         const error = new Error(parseError.message)

@@ -66,10 +66,13 @@ function joinComma<T extends AstNode>(
   options: ParserOptions<AstNode>,
 ) {
   return join(
-    options.commaMode === CommaMode.NONE ? line : [',', line],
+    // commas are added inside the map loop
+    line,
     path.map((_childNode, index, elements) => {
       const childNode = _childNode as AstPath<T>
       const child = print(childNode)
+      // don't print comma for empty node
+      if (childNode.node.type === 'Newline') return child
 
       switch (options.commaMode) {
         case CommaMode.NONE:
@@ -80,10 +83,12 @@ function joinComma<T extends AstNode>(
             ? [child, ',']
             : child
         case CommaMode.NORMAL:
-          return child
+          return index === elements.length - 1 ? child : [child, ',']
         case CommaMode.TRAILING:
           // trailing comma if this group broke
-          return index === elements.length - 1 ? [child, ifBreak(',')] : child
+          return index === elements.length - 1
+            ? [child, ifBreak(',')]
+            : [child, ',']
         default:
           const _: never = options.commaMode
           return child

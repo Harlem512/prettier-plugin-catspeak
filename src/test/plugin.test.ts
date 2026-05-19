@@ -120,6 +120,8 @@ describe('array literal', () => {
   it('simple', test('[    a b]', '[a, b]'))
   it('long', test('[    long b]', '[\n\tlong,\n\tb,\n]'))
   it('empty', test('[\n]', '[]'))
+  it('with newline', test('[\n\n\na\n\n\n\n\nb]', '[\n\ta,\n\n\tb,\n]'))
+  it('comma inside', test('[\n--hello\n]', '[]'))
   describe('comma tests', () => {
     // options tests
     it(

@@ -96,7 +96,7 @@ x = foo +
     bar
 ```
 
-## parseCatchThrow
+### parseCatchThrow
 
 Version 3.2.0 of Catspeak introduces the `throw` and `catch` expressions and their keywords.
 
@@ -109,6 +109,10 @@ throw "hello" -- formatted as an expression
 let throw -- no error
 throw "hello" -- formatted as two no-op expressions
 ```
+
+## TODO
+
+- Fix commas inside certain expressions (`[\n--hello\n]`, `{\n--hello\n}`)
 
 ## "Reference Material"
 
