@@ -9,20 +9,13 @@ export enum CommaMode {
   TRAILING = 'trailing',
 }
 
-export enum SemicolonMode {
-  /** Only print required semicolons */
-  REQUIRED = 'required',
-  /** End all statements with a semicolon */
-  ALL = 'all',
-}
-
 export interface CatspeakOptions {
   // required to fix typescript error when importing the plugin
   [key: string]: unknown
   /** colon mode */
   commaMode: CommaMode
-  /** semicolon mode */
-  semicolonMode: SemicolonMode
+  /** print all semicolons */
+  printSemicolons: boolean
   /** double indent inside of some blocks */
   doubleIndent: boolean
   /** if functions with no arguments should drop ( ) */
@@ -65,26 +58,16 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
   doubleIndent: {
     category: 'catspeak',
     type: 'boolean',
-    default: true,
+    default: false,
     description:
       'Enable/disable double indenting some wrapped expression blocks, such as if conditions, accessors, and function calls.',
   },
-  semicolonMode: {
+  printSemicolons: {
     category: 'catspeak',
-    type: 'choice',
-    default: SemicolonMode.REQUIRED,
-    description: 'Specifies how semicolons should be printed.',
-    choices: [
-      {
-        value: SemicolonMode.REQUIRED,
-        description: 'Prints only required semicolons. `let x return; fn()`',
-      },
-      {
-        value: SemicolonMode.ALL,
-        description:
-          'Prints semicolons after every statement. `let x; return; fn();`',
-      },
-    ],
+    type: 'boolean',
+    default: true,
+    description:
+      'If enabled, each statement will be terminated with a semicolon.',
   },
   emptyFunctionArguments: {
     category: 'catspeak',
@@ -96,7 +79,7 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
   wrapBinaryOperators: {
     category: 'catspeak',
     type: 'boolean',
-    default: true,
+    default: false,
     description:
       'If enabled, wrapped binary operation expressions will place their operator on a newline before the second operand.',
   },
@@ -112,9 +95,9 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
 // MARK: Default Options
 export const defaultOptions: CatspeakOptions = {
   commaMode: CommaMode.TRAILING,
-  doubleIndent: true,
-  semicolonMode: SemicolonMode.REQUIRED,
+  doubleIndent: false,
+  printSemicolons: false,
   emptyFunctionArguments: false,
-  wrapBinaryOperators: true,
+  wrapBinaryOperators: false,
   parseCatchThrow: true,
 }

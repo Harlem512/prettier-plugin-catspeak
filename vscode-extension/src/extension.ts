@@ -9,6 +9,7 @@ import {
   TextDocument,
   TextEdit,
   window,
+  workspace,
 } from 'vscode'
 import type { ParseError } from '../../out/parser/ast.js'
 
@@ -16,9 +17,16 @@ const console = createOutputChannel('Prettier (Catspeak)')
 export async function activate(context: ExtensionContext) {
   context.subscriptions.push(
     languages.registerDocumentFormattingEditProvider('catspeak', {
-      async provideDocumentFormattingEdits(document) {
+      async provideDocumentFormattingEdits(document, options) {
+        const workspaceConfig = workspace.getConfiguration()
+
         // base config to format with catspeak
         const baseConfig: Config = {
+          // prettier.catspeak contains all of the parsing options
+          ...workspaceConfig.get('prettier.catspeak'),
+          // defaults
+          useTabs: !options.insertSpaces,
+          tabWidth: options.tabSize,
           plugins: [CatspeakPlugin],
           parser: 'catspeak',
         }

@@ -71,6 +71,52 @@
           "meta.embedded.block.catspeak": "catspeak"
         }
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Prettier (Catspeak)",
+      "type": "object",
+      "properties": {
+        "prettier.catspeak.commaMode": {
+          "description": "Specifies how commas should be printed.",
+          "type": "string",
+          "enum": [
+            "none",
+            "normal",
+            "trailing"
+          ],
+          "markdownEnumDescriptions": [
+            "Print no commas except when required. `fn(a, [b] c)`",
+            "Print commas in a 'normal' manner. `fn(a, [b], c)`",
+            "Print trailing commas when the statement wraps to a new line. `fn(a, [b, ], c, )`"
+          ],
+          "default": "trailing"
+        },
+        "prettier.catspeak.doubleIndent": {
+          "description": "Enable/disable double indenting some wrapped expression blocks, such as if conditions, accessors, and function calls.",
+          "type": "boolean",
+          "default": false
+        },
+        "prettier.catspeak.printSemicolons": {
+          "description": "If enabled, each statement will be terminated with a semicolon.",
+          "type": "boolean",
+          "default": false
+        },
+        "prettier.catspeak.emptyFunctionArguments": {
+          "markdownDescription": "If enabled, function declarations with no arguments will not have parenthesis. `let fn = fun { ... }`",
+          "type": "boolean",
+          "default": false
+        },
+        "prettier.catspeak.wrapBinaryOperators": {
+          "description": "If enabled, wrapped binary operation expressions will place their operator on a newline before the second operand.",
+          "type": "boolean",
+          "default": false
+        },
+        "prettier.catspeak.parseCatchThrow": {
+          "description": "If enabled, catch and throw expressions will be parsed and both keywords will be forbidden as identifiers.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
   }
 }

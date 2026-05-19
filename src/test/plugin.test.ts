@@ -7,15 +7,18 @@ const long =
   'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 
 function test(raw: string, formatted: string, options?: Options) {
+  const opts = {
+    doubleIndent: true,
+    ...options,
+    plugins: [CatspeakPlugin],
+    parser: 'catspeak',
+    useTabs: true,
+  }
+
   const expected = formatted ? formatted + '\n' : formatted
 
   return async () => {
-    const form1 = await format(raw.replaceAll('long', long), {
-      ...options,
-      plugins: [CatspeakPlugin],
-      parser: 'catspeak',
-      useTabs: true,
-    })
+    const form1 = await format(raw.replaceAll('long', long), opts)
     const formNormal = form1.replaceAll(long, 'long')
     // console.log(
     //   JSON.stringify(
@@ -31,12 +34,7 @@ function test(raw: string, formatted: string, options?: Options) {
     expect(formNormal).toBe(expected)
 
     // run formatter again to ensure tokenization doesn't get messed up
-    const form2 = await format(form1, {
-      ...options,
-      plugins: [CatspeakPlugin],
-      parser: 'catspeak',
-      useTabs: true,
-    })
+    const form2 = await format(form1, opts)
     const formNormal2 = form2.replaceAll(long, 'long')
     // console.log(
     //   JSON.stringify(
@@ -148,7 +146,6 @@ describe('array literal', () => {
       }),
     )
   })
-  describe('semicolon tests', () => {})
 })
 
 // MARK: assignment
@@ -323,16 +320,16 @@ describe('operator', () => {
   it('chained operator', test('a\n\n\tand\n\n\tb and c', 'a and b and c'))
 
   describe('wrap operator', () => {
-    it('a + long', test('a+long', 'a\n\t\t+ long'))
-    it('long + b', test('long+b', 'long\n\t\t+ b'))
-    it('long + long', test('long+long', 'long\n\t\t+ long'))
+    const o: Partial<CatspeakOptions> = { wrapBinaryOperators: true }
+    it('a + long', test('a+long', 'a\n\t\t+ long', o))
+    it('long + b', test('long+b', 'long\n\t\t+ b', o))
+    it('long + long', test('long+long', 'long\n\t\t+ long', o))
   })
 
   describe("don't wrap operator", () => {
-    const o: Partial<CatspeakOptions> = { wrapBinaryOperators: false }
-    it('a + long', test('a+long', 'a +\n\t\tlong', o))
-    it('long + b', test('long+b', 'long +\n\t\tb', o))
-    it('long + long', test('long+long', 'long +\n\t\tlong', o))
+    it('a + long', test('a+long', 'a +\n\t\tlong'))
+    it('long + b', test('long+b', 'long +\n\t\tb'))
+    it('long + long', test('long+long', 'long +\n\t\tlong'))
   })
 })
 

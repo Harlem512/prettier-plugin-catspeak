@@ -36,16 +36,16 @@ Changes how commas are handled. `normal` prints non-trailing commas, `trailing` 
 [ a, [b] ]
 ```
 
-### semicolonMode
+### printSemicolons
 
-Changes how semicolons are handled. `required` prints only semicolons required to remove ambiguity, `all` prints a semicolon after all statements.
+Changes how semicolons are handled. If enabled, each statement will be terminated with a semicolon.
 
 ```catspeak
--- required
+-- printSemicolons = false
 let foo = bar;
 (baz)
 
--- all
+-- printSemicolons = true
 let foo = bar;
 (baz);
 ```

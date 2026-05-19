@@ -1,6 +1,6 @@
 import { AstPath, Doc, ParserOptions, Printer } from 'prettier'
 import { builders, utils } from 'prettier/doc'
-import { CommaMode, SemicolonMode } from './options.js'
+import { CommaMode } from './options.js'
 import { AstNode, NodeMap, NodeType } from './parser/ast.js'
 import { IterProperties, RNull } from './types.js'
 
@@ -124,7 +124,7 @@ function joinSemicolon<T extends AstNode>(
       const child = print(childNode)
 
       // add always-required semicolon
-      if (options.semicolonMode === SemicolonMode.ALL) return [child, ';']
+      if (options.printSemicolons) return [child, ';']
 
       const next = getNext(childNode)
       // no next node, never semicolon
