@@ -608,6 +608,10 @@ export const printer: Printer<AstNode> = {
         return [node.identifier, node.value]
       case 'Call':
         return [node.fun, ...(node.arguments ?? [])]
+      case 'Catch':
+        return node.identifier
+          ? [node.expression, node.identifier, ...node.block]
+          : [node.expression, ...node.block]
       case 'Do':
         return node.block
       case 'Function':
@@ -640,6 +644,8 @@ export const printer: Printer<AstNode> = {
         return node.entries
       case 'StructLiteralEntry':
         return node.value ? [node.key, node.value] : [node.key]
+      case 'Throw':
+        return [node.value]
       case 'Unary':
         return [node.value]
       case 'While':
@@ -656,7 +662,9 @@ export const printer: Printer<AstNode> = {
       case 'Newline':
       case 'Comment':
       case 'CommentPlaceholder':
+        return []
       default:
+        const _: never = node
         return []
     }
   },
