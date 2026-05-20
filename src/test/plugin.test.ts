@@ -201,7 +201,7 @@ describe('catch', () => {
     test('long catch {long}', 'long catch {\n\tlong\n}'),
   )
   it('all long', test('long catch long {long}', 'long catch long {\n\tlong\n}'))
-  it('comment', test('a catch --\n{}', '\na catch { } --'))
+  it('comment', test('a catch --\n{}', 'a catch { } --'))
 })
 
 // MARK: do

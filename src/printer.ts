@@ -586,6 +586,11 @@ export const printer: Printer<AstNode> = {
     // @ts-expect-error
     return fn(path, options, print, args)
   },
+  getVisitorKeys(node, nonTraversableKeys) {
+    return Object.keys(node).filter(
+      (key) => !nonTraversableKeys.has(key) && key !== 'range',
+    )
+  },
   printComment(path) {
     // ensure comment-only node
     if (path.node.type !== 'Comment') return path.node.type
