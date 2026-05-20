@@ -21,6 +21,20 @@ function indentExp(doc: Doc, options: ParserOptions<AstNode>): Doc {
   return options.doubleIndent ? indent(indent(doc)) : indent(doc)
 }
 
+// MARK: brokenStrip
+/**
+ * Helper function to remove trailing newlines after comments in an empty block. Its worth it, trust.
+ */
+function brokenStrip(content: Doc) {
+  // print comment placeholder node so comments can be attached
+  return group(
+    // strip trailing hardline to prevent a weird trailing newline inside the block
+    utils.stripTrailingHardline(indent(content)),
+    // force break so comments get placed on newlines
+    { shouldBreak: true },
+  )
+}
+
 // MARK: separator
 /**
  * Returns true if these nodes require a separator to disambiguate some statements.
@@ -72,7 +86,12 @@ function joinComma<T extends AstNode>(
       const childNode = _childNode as AstPath<T>
       const child = print(childNode)
       // don't print comma for empty node
-      if (childNode.node.type === 'Newline') return child
+      if (
+        childNode.node.type === 'Newline' ||
+        childNode.node.type === 'CommentPlaceholder'
+      ) {
+        return child
+      }
 
       switch (options.commaMode) {
         case CommaMode.NONE:
@@ -95,6 +114,40 @@ function joinComma<T extends AstNode>(
       }
     }, key),
   )
+}
+
+// MARK: comma comments
+function joinCommaWithComments<N extends AstNode>(
+  path: AstPath<N>,
+  blockKey: IterProperties<N>,
+  print: (path: AstPath<AstNode>) => Doc,
+  options: ParserOptions<AstNode>,
+  useLine: boolean,
+): Doc {
+  // this cast is always safe since blockKey must be a key of N that resolves to an array
+  const children = path.node[blockKey as keyof N] as AstNode[]
+  // this is always defined since empty blocks always have an internal CommentPlaceholder
+  const firstChild = children[0]
+
+  // body has content, print normally
+  if (firstChild.type !== 'CommentPlaceholder')
+    return indent([
+      useLine ? line : softline,
+      joinComma(path, blockKey, print, options),
+    ])
+
+  // check if the comment placeholder has comments
+  const hasComments = firstChild.comments && firstChild.comments.length > 0
+  // no comments, don't print anything to prevent text wrapping behavior
+  if (!hasComments) return ''
+
+  // print comment placeholder node so comments can be attached
+  return brokenStrip([
+    useLine ? line : softline,
+    // this is safe since path.node[blockKey][0] has already been validated
+    // @ts-expect-error
+    path.call(print, blockKey, 0),
+  ])
 }
 
 /**
@@ -163,6 +216,7 @@ function printBlock<N extends AstNode>(
   // this is always defined since empty blocks always have an internal CommentPlaceholder
   const firstChild = children[0]
 
+  // body has content, print normally
   if (firstChild.type !== 'CommentPlaceholder')
     return indent([line, joinSemicolon(path, print, options, blockKey)])
 
@@ -172,19 +226,12 @@ function printBlock<N extends AstNode>(
   if (!hasComments) return ''
 
   // print comment placeholder node so comments can be attached
-  return group(
-    // strip trailing hardline to prevent a weird trailing newline inside the block
-    utils.stripTrailingHardline(
-      indent([
-        line,
-        // this is safe since path.node[blockKey][0] has already been validated
-        // @ts-expect-error
-        path.call(print, blockKey, 0),
-      ]),
-    ),
-    // force break so comments get placed on newlines
-    { shouldBreak: true },
-  )
+  return brokenStrip([
+    line,
+    // this is safe since path.node[blockKey][0] has already been validated
+    // @ts-expect-error
+    path.call(print, blockKey, 0),
+  ])
 }
 
 // MARK: PRINTERS
@@ -274,10 +321,13 @@ const nodePrinters: {
   },
   // MARK: [ array ]
   ArrayLiteral(path, options, print) {
+    const join = joinCommaWithComments(path, 'values', print, options, false)
+
     return group([
       '[',
-      indent([softline, joinComma(path, 'values', print, options)]),
-      softline,
+      join,
+      // so empty arrays print as `[]`
+      join === '' ? '' : softline,
       ']',
     ])
   },
@@ -458,14 +508,13 @@ const nodePrinters: {
   },
   // MARK: { struct }
   StructLiteral(path, options, print) {
-    const hasEntries = path.node.entries.length === 0
+    const join = joinCommaWithComments(path, 'entries', print, options, true)
 
     return group([
       '{',
-      hasEntries
-        ? ''
-        : indent([line, joinComma(path, 'entries', print, options)]),
-      hasEntries ? '' : line,
+      join,
+      // so empty structs print as `{}`
+      join === '' ? '' : line,
       '}',
     ])
   },

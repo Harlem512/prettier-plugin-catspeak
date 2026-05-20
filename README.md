@@ -112,7 +112,9 @@ throw "hello" -- formatted as two no-op expressions
 
 ## TODO
 
-- Fix commas inside certain expressions (`[\n--hello\n]`, `{\n--hello\n}`)
+- Fix commas inside catch expressions (`a catch --\n{}`)
+- Fix match expression formatting, refactor into sub-nodes
+- Fix identifier expression struct keys formatting to identifier keys `{[a]:b} => {a:b}`
 
 ## "Reference Material"
 

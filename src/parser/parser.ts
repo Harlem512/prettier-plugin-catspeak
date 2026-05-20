@@ -4,6 +4,7 @@ import type {
   AstNode,
   CatchNode,
   CommentNode,
+  CommentPlaceholderNode,
   GroupNode,
   IdentifierNode,
   IfNode,
@@ -60,16 +61,12 @@ export function parse(
     return token.type === type && (value === undefined || token.value === value)
   }
 
-  function isAtEnd(): boolean {
-    return current().type === 'EOF'
-  }
-
   /**
    * advance until next newline/comment token
    */
   function advance(): void {
     // if the current token is an end of file, throw an error
-    if (pos !== -1 && isAtEnd()) {
+    if (pos !== -1 && is('EOF')) {
       throwError('Unexpected end of file', current().range)
     }
 
@@ -162,49 +159,62 @@ export function parse(
     return { start: start.range.start, end: end?.range.end }
   }
 
+  /**
+   * Accepts an array of nodes and appends the passed node. Also handles adding `newline` nodes.
+   */
+  function appendNodeArray<T extends AstNode>(
+    arr: (T | NewlineNode)[],
+    node: T | null,
+  ) {
+    if (node) arr.push(node)
+    // no further processing
+    if (!options?.includePlaceholders) return
+
+    // suppress multiple newlines in a row
+    if (arr.at(-1)?.type === 'Newline') return
+
+    const leadingNewline = getNewline()
+    if (leadingNewline) arr.push(leadingNewline)
+  }
+  /**
+   * Transforms an array of nodes after finished appending. Adds comment placeholder nodes to empty arrays.
+   */
+  function transformNodeArray<T extends AstNode>(
+    arr: (T | CommentPlaceholderNode)[],
+  ) {
+    // no transformations if placeholders are omitted
+    if (!options?.includePlaceholders) return
+
+    // remove trailing newline block
+    if (arr.at(-1)?.type === 'Newline') arr.splice(-1)
+
+    // no nodes, push a placeholder so comments can be attached correctly
+    if (arr.length === 0) {
+      const end = current().range.end
+      arr.push({
+        type: 'CommentPlaceholder',
+        // range is wonky so comments are all printed at the start of the block
+        range: { start: end, end },
+      })
+    }
+  }
+
   // MARK: block
   function parseBlock(): AstNode[] {
     expect('Punctuation', '{')
     advance()
 
     const nodes: AstNode[] = []
-
-    while (!isAtEnd() && !is('Punctuation', '}')) {
+    while (!is('Punctuation', '}') && !is('EOF')) {
       try {
-        const statement = parseStatement()
-
-        if (statement) {
-          nodes.push(statement)
-        } else {
-          // suppress multiple newlines in a row
-          // check goes here because if statement is a node, then
-          // the last node is never a newline
-          if (nodes.at(-1)?.type === 'Newline') continue
-        }
-        if (!options?.includePlaceholders) continue
-
-        const leadingNewline = getNewline()
-        if (leadingNewline) nodes.push(leadingNewline)
+        appendNodeArray(nodes, parseStatement())
       } catch (e: any) {
         // check if this is a normal error
         if (!e.range) throw e
-        if (!isAtEnd()) advance()
+        if (!is('EOF')) advance()
       }
     }
-
-    // remove trailing newline block
-    if (nodes.at(-1)?.type === 'Newline') {
-      nodes.splice(-1)
-    }
-    if (nodes.length === 0 && options?.includePlaceholders) {
-      const end = current().range.end
-      // no nodes, push a placeholder so comments can be attached correctly
-      nodes.push({
-        type: 'CommentPlaceholder',
-        // range is wonky so comments are all printed at the start of the block
-        range: { start: end, end },
-      })
-    }
+    transformNodeArray(nodes)
 
     expect('Punctuation', '}')
     advance()
@@ -845,14 +855,11 @@ export function parse(
 
       const values: AstExpressionNode[] = []
       while (!is('Punctuation', ']') && !is('EOF')) {
-        values.push(parseExpression())
+        const exp = parseExpression()
         if (is('Punctuation', ',')) advance()
-
-        // newline op between array entries
-        if (!options?.includePlaceholders) continue
-        const leadingNewline = getNewline()
-        if (leadingNewline) values.push(leadingNewline)
+        appendNodeArray(values, exp)
       }
+      transformNodeArray(values)
 
       expect('Punctuation', ']')
       advance() // consume ]
@@ -934,13 +941,14 @@ export function parse(
 
         if (is('Punctuation', ',')) advance()
 
-        entries.push({
+        appendNodeArray(entries, {
           type: 'StructLiteralEntry',
           key,
           value,
           range: getRange(keyToken),
         })
       }
+      transformNodeArray(entries)
 
       expect('Punctuation', '}')
       advance()
@@ -959,46 +967,17 @@ export function parse(
   }
 
   // MARK: RUN
-  // don't accept leading newline nodes
   const nodes: AstNode[] = []
-
-  while (!isAtEnd()) {
+  while (!is('EOF')) {
     try {
-      const statement = parseStatement()
-
-      if (statement) {
-        nodes.push(statement)
-      } else {
-        // suppress multiple newlines in a row
-        // check goes here because if statement is a node, then
-        // the last node is never a newline
-        if (nodes.at(-1)?.type === 'Newline') continue
-      }
-      if (!options?.includePlaceholders) continue
-
-      const leadingNewline = getNewline()
-      if (leadingNewline) nodes.push(leadingNewline)
+      appendNodeArray(nodes, parseStatement())
     } catch (e: any) {
       // check if this is a normal error
       if (!e.range) throw e
-      if (!isAtEnd()) advance()
+      if (!is('EOF')) advance()
     }
   }
-
-  // remove trailing newline block
-  if (nodes.at(-1)?.type === 'Newline') {
-    nodes.splice(-1)
-  }
-
-  if (nodes.length === 0 && options?.includePlaceholders) {
-    const end = current().range.end
-    // no nodes, push a placeholder so comments can be attached correctly
-    nodes.push({
-      type: 'CommentPlaceholder',
-      // range is wonky so comments are all printed at the start
-      range: { start: end, end },
-    })
-  }
+  transformNodeArray(nodes)
 
   return {
     ast: {

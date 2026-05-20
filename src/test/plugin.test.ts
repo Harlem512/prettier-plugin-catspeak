@@ -115,13 +115,13 @@ describe('accessor', () => {
   })
 })
 
-// MARK: array literal
+// MARK: [array literal]
 describe('array literal', () => {
   it('simple', test('[    a b]', '[a, b]'))
   it('long', test('[    long b]', '[\n\tlong,\n\tb,\n]'))
   it('empty', test('[\n]', '[]'))
   it('with newline', test('[\n\n\na\n\n\n\n\nb]', '[\n\ta,\n\n\tb,\n]'))
-  it('comma inside', test('[\n--hello\n]', '[]'))
+  it('comma inside', test('[\n--hello\n]', '[\n\t--hello\n]'))
   describe('comma tests', () => {
     // options tests
     it(
@@ -201,6 +201,7 @@ describe('catch', () => {
     test('long catch {long}', 'long catch {\n\tlong\n}'),
   )
   it('all long', test('long catch long {long}', 'long catch long {\n\tlong\n}'))
+  it('comment', test('a catch --\n{}', '--a\na catch { }'))
 })
 
 // MARK: do
@@ -226,6 +227,7 @@ describe('fun', () => {
     'empty function arguments',
     test('fun {}', 'fun { }', { emptyFunctionArguments: true }),
   )
+  it('comment', test('fun --\n{}', 'fun () {\n\t--\n}'))
 })
 
 // MARK: if
@@ -270,6 +272,10 @@ describe('if', () => {
         'if long{long}else{long}',
         'if\n\t\tlong\n{\n\tlong\n} else {\n\tlong\n}',
       ),
+    )
+    it(
+      'weird comment',
+      test('if a{}\n\n\n\n--\n\n\n\n\nelse{}', 'if a { } else {\n\t--\n}'),
     )
   })
   describe('else if', () => {
@@ -318,7 +324,12 @@ describe('match', () => {
       'match a {\n\tcase a { }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\telse { }\n}',
     ),
   )
+  it('long condition', test('match long {case a{}}', 'match\n\t\tlong {\n\t'))
   it('empty', test('match a{}', 'match a { }'))
+  describe('comments', () => {
+    it('no cases', test('match a{\n\n--\n}', 'match a'))
+    it('before case', test('match a{\n\n--\ncase a{ }}', 'match a'))
+  })
 })
 
 // MARK: operator
@@ -356,6 +367,7 @@ describe('struct literal', () => {
   it('long value', test('{a:long}', '{\n\ta: long,\n}'))
   it('long key value', test('{long:long}', '{\n\tlong: long,\n}'))
   it('expression key', test('{["a"]:b}', '{ "a": b }'))
+  it('identifier expression key', test('{[a]:b}', '{ [a]: b }'))
   it(
     'long expression key',
     test('{[long()]:b}', '{\n\t[\n\t\t\tlong()\n\t]: b,\n}'),
@@ -367,6 +379,13 @@ describe('struct literal', () => {
       commaMode: CommaMode.NONE,
     }),
   )
+  describe('comments', () => {
+    it('inside empty', test('{--\n}', '{\n\t--\n}'))
+    it(
+      'before expression key',
+      test('{--\n["a"]:b}', '{\n\t--\n\t["a"]: b,\n}'),
+    )
+  })
 })
 
 describe('throw', () => {

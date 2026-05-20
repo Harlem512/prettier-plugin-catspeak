@@ -229,7 +229,8 @@ describe('array literal', () => {
   it('empty', () => {
     const res = parse('[]')
     const ar = node<ArrayLiteralNode>(res.ast.block[0], 'ArrayLiteral', 0, 2)
-    expect(ar.values).toHaveLength(0)
+    expect(ar.values).toHaveLength(1)
+    node<CommentPlaceholderNode>(ar.values[0], 'CommentPlaceholder', 2, 2)
   })
   it('with commas', () => {
     const res = parse('[1, 2]')
@@ -264,7 +265,8 @@ describe('struct literal', () => {
       0,
       2,
     )
-    expect(struct.entries).toHaveLength(0)
+    expect(struct.entries).toHaveLength(1)
+    node<CommentPlaceholderNode>(struct.entries[0], 'CommentPlaceholder', 2, 2)
   })
 
   it('terminal key', () => {
