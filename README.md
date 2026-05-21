@@ -110,10 +110,6 @@ let throw -- no error
 throw "hello" -- formatted as two no-op expressions
 ```
 
-## TODO
-
-- Fix match expression formatting, refactor into sub-nodes
-
 ## "Reference Material"
 
 - Astro's [Prettier plugin](https://github.com/withastro/prettier-plugin-astro)

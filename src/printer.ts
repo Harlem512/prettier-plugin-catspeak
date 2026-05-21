@@ -21,20 +21,6 @@ function indentExp(doc: Doc, options: ParserOptions<AstNode>): Doc {
   return options.doubleIndent ? indent(indent(doc)) : indent(doc)
 }
 
-// MARK: brokenStrip
-/**
- * Helper function to remove trailing newlines after comments in an empty block. Its worth it, trust.
- */
-function brokenStrip(content: Doc) {
-  // print comment placeholder node so comments can be attached
-  return group(
-    // strip trailing hardline to prevent a weird trailing newline inside the block
-    utils.stripTrailingHardline(indent(content)),
-    // force break so comments get placed on newlines
-    { shouldBreak: true },
-  )
-}
-
 // MARK: separator
 /**
  * Returns true if these nodes require a separator to disambiguate some statements.
@@ -116,13 +102,22 @@ function joinComma<T extends AstNode>(
   )
 }
 
-// MARK: comma comments
-function joinCommaWithComments<N extends AstNode>(
+// MARK: join comments
+/**
+ * Joins an array of nodes that may contain comments. Performs special handling so comment-only blocks work correctly.
+ */
+function joinWithComments<N extends AstNode>(
   path: AstPath<N>,
   blockKey: IterProperties<N>,
   print: (path: AstPath<AstNode>) => Doc,
   options: ParserOptions<AstNode>,
-  useLine: boolean,
+  groupPrefix: Doc,
+  joinFn: (
+    pa: typeof path,
+    b: typeof blockKey,
+    pr: typeof print,
+    o: typeof options,
+  ) => Doc,
 ): Doc {
   // this cast is always safe since blockKey must be a key of N that resolves to an array
   const children = path.node[blockKey as keyof N] as AstNode[]
@@ -131,10 +126,7 @@ function joinCommaWithComments<N extends AstNode>(
 
   // body has content, print normally
   if (firstChild.type !== 'CommentPlaceholder')
-    return indent([
-      useLine ? line : softline,
-      joinComma(path, blockKey, print, options),
-    ])
+    return indent([groupPrefix, joinFn(path, blockKey, print, options)])
 
   // check if the comment placeholder has comments
   const hasComments = firstChild.comments && firstChild.comments.length > 0
@@ -142,12 +134,19 @@ function joinCommaWithComments<N extends AstNode>(
   if (!hasComments) return ''
 
   // print comment placeholder node so comments can be attached
-  return brokenStrip([
-    useLine ? line : softline,
-    // this is safe since path.node[blockKey][0] has already been validated
-    // @ts-expect-error
-    path.call(print, blockKey, 0),
-  ])
+  return group(
+    // strip trailing hardline to prevent a weird trailing newline inside the block
+    utils.stripTrailingHardline(
+      indent([
+        groupPrefix,
+        // this is safe since path.node[blockKey][0] has already been validated
+        // @ts-expect-error
+        path.call(print, blockKey, 0),
+      ]),
+    ),
+    // force break so comments get placed on newlines
+    { shouldBreak: true },
+  )
 }
 
 /**
@@ -171,9 +170,9 @@ function getNext(path: AstPath<AstNode>): AstNode | undefined {
  */
 function joinSemicolon<T extends AstNode>(
   path: AstPath<T>,
+  key: IterProperties<T>,
   print: (path: AstPath<AstNode>) => Doc,
   options: ParserOptions<AstNode>,
-  key: IterProperties<T>,
 ): Doc[] {
   return join(
     hardline,
@@ -211,27 +210,7 @@ function printBlock<N extends AstNode>(
   print: (path: AstPath<AstNode>) => Doc,
   options: ParserOptions<AstNode>,
 ): Doc {
-  // this cast is always safe since blockKey must be a key of N that resolves to an array
-  const children = path.node[blockKey as keyof N] as AstNode[]
-  // this is always defined since empty blocks always have an internal CommentPlaceholder
-  const firstChild = children[0]
-
-  // body has content, print normally
-  if (firstChild.type !== 'CommentPlaceholder')
-    return indent([line, joinSemicolon(path, print, options, blockKey)])
-
-  // check if the comment placeholder has comments
-  const hasComments = firstChild.comments && firstChild.comments.length > 0
-  // no comments, don't print anything to prevent text wrapping behavior
-  if (!hasComments) return ''
-
-  // print comment placeholder node so comments can be attached
-  return brokenStrip([
-    line,
-    // this is safe since path.node[blockKey][0] has already been validated
-    // @ts-expect-error
-    path.call(print, blockKey, 0),
-  ])
+  return joinWithComments(path, blockKey, print, options, line, joinSemicolon)
 }
 
 // MARK: PRINTERS
@@ -259,7 +238,7 @@ const nodePrinters: {
   },
   // MARK: block
   Root(path, options, print) {
-    const body = joinSemicolon(path, print, options, 'block')
+    const body = joinSemicolon(path, 'block', print, options)
 
     if (path.node.block[0].type === 'CommentPlaceholder') {
       // if the only node is a CommentPlaceholder,
@@ -321,7 +300,14 @@ const nodePrinters: {
   },
   // MARK: [ array ]
   ArrayLiteral(path, options, print) {
-    const join = joinCommaWithComments(path, 'values', print, options, false)
+    const join = joinWithComments(
+      path,
+      'values',
+      print,
+      options,
+      softline,
+      joinComma,
+    )
 
     return group([
       '[',
@@ -438,37 +424,30 @@ const nodePrinters: {
   Match(path, options, print) {
     return group([
       group([
-        'match ',
-        indentExp(path.call(print, 'condition'), options),
+        'match',
+        indentExp([line, path.call(print, 'condition')], options),
         line,
         '{',
       ]),
-      group(
-        path.map((caseNode) => {
-          // either `case X` or `else`
-          const caseDoc = caseNode.node.case
-            ? group([
-                'case',
-                line,
-                // safe to hide print here, `case` will always be non-null
-                // @ts-expect-error
-                caseNode.call(print, 'case'),
-                line,
-              ])
-            : ['else ']
-          // print body of the case/else
-          return indent([
-            line,
-            group([
-              caseDoc,
-              '{',
-              printBlock(path, 'block', print, options),
-              line,
-              '}',
-            ]),
-          ])
-        }, 'cases'),
+      joinWithComments(path, 'cases', print, options, line, () =>
+        join(line, path.map(print, 'cases')),
       ),
+      line,
+      '}',
+    ])
+  },
+  // MARK: match case
+  MatchCase(path, options, print) {
+    // either `case X` or `else`
+    const caseDoc = path.node.case
+      ? group(['case', line, path.call(print, 'case'), line])
+      : ['else ']
+
+    // print body of the case/else
+    return group([
+      caseDoc,
+      '{',
+      printBlock(path, 'block', print, options),
       line,
       '}',
     ])
@@ -508,7 +487,14 @@ const nodePrinters: {
   },
   // MARK: { struct }
   StructLiteral(path, options, print) {
-    const join = joinCommaWithComments(path, 'entries', print, options, true)
+    const join = joinWithComments(
+      path,
+      'entries',
+      print,
+      options,
+      line,
+      joinComma,
+    )
 
     return group([
       '{',
@@ -627,12 +613,9 @@ export const printer: Printer<AstNode> = {
       case 'LetStatement':
         return node.value ? [node.identifier, node.value] : [node.identifier]
       case 'Match':
-        return [
-          node.condition,
-          ...node.cases.flatMap<AstNode>((m) =>
-            m.case ? [m.case, ...m.block] : [...m.block],
-          ),
-        ]
+        return [node.condition, ...node.cases]
+      case 'MatchCase':
+        return node.case ? [node.case, ...node.block] : node.block
       case 'Operator':
         return [node.left, node.right]
       case 'Return':

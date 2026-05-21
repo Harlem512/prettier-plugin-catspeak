@@ -324,11 +324,24 @@ describe('match', () => {
       'match a {\n\tcase a { }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\tcase a { 1 }\n\telse { }\n}',
     ),
   )
-  it('long condition', test('match long {case a{}}', 'match\n\t\tlong {\n\t'))
+  it(
+    'long condition',
+    test('match long {case a{}}', 'match\n\t\tlong\n{\n\tcase a { }\n}'),
+  )
   it('empty', test('match a{}', 'match a { }'))
   describe('comments', () => {
-    it('no cases', test('match a{\n\n--\n}', 'match a'))
-    it('before case', test('match a{\n\n--\ncase a{ }}', 'match a'))
+    it('no cases', test('match a{\n\n--\n}', 'match a {\n\t--\n}'))
+    it(
+      'before case',
+      test('match a{\n\n--\ncase a{ }}', 'match a {\n\t--\n\tcase a { }\n}'),
+    )
+    it(
+      'between case',
+      test(
+        'match a{case a{ }\n\n--\ncase a{ }}',
+        'match a {\n\tcase a { }\n\n\t--\n\tcase a { }\n}',
+      ),
+    )
   })
 })
 

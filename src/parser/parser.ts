@@ -448,8 +448,15 @@ export function parse(
           )
         }
 
-        cases.push({ case: caseExp, block: parseBlock() })
+        const block = parseBlock()
+        appendNodeArray(cases, {
+          type: 'MatchCase',
+          case: caseExp,
+          block: block,
+          range: getRange(tok),
+        })
       }
+      transformNodeArray(cases)
 
       expect('Punctuation', '}')
       advance() // consume }

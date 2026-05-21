@@ -16,6 +16,7 @@ import {
   GroupNode,
   RootNode,
   CommentPlaceholderNode,
+  MatchCaseNode,
 } from './ast.js'
 import type { Position } from './lexer.js'
 import { parse as baseParse } from './parser.js'
@@ -468,21 +469,24 @@ describe('match', () => {
     node<IdentifierNode>(n.condition, 'Identifier', 6, 7, { name: 'a' })
     expect(n.cases).toHaveLength(3)
     // case 1
-    node<NumberNode>(n.cases[0].case!, 'Number', 13, 14, { value: '1' })
-    expect(n.cases[0].block).toHaveLength(1)
-    node<IdentifierNode>(n.cases[0].block[0], 'Identifier', 15, 16, {
+    const c1 = node<MatchCaseNode>(n.cases[0], 'MatchCase', 8, 17)
+    node<NumberNode>(c1.case!, 'Number', 13, 14, { value: '1' })
+    expect(c1.block).toHaveLength(1)
+    node<IdentifierNode>(c1.block[0], 'Identifier', 15, 16, {
       name: 'b',
     })
     // case 2
-    node<NumberNode>(n.cases[1].case!, 'Number', 22, 23, { value: '2' })
-    expect(n.cases[1].block).toHaveLength(1)
-    node<IdentifierNode>(n.cases[1].block[0], 'Identifier', 24, 25, {
+    const c2 = node<MatchCaseNode>(n.cases[1], 'MatchCase', 17, 26)
+    node<NumberNode>(c2.case!, 'Number', 22, 23, { value: '2' })
+    expect(c2.block).toHaveLength(1)
+    node<IdentifierNode>(c2.block[0], 'Identifier', 24, 25, {
       name: 'c',
     })
     // else
-    expect(n.cases[2].case).toBeNull()
-    expect(n.cases[2].block).toHaveLength(1)
-    node<IdentifierNode>(n.cases[2].block[0], 'Identifier', 31, 32, {
+    const c3 = node<MatchCaseNode>(n.cases[2], 'MatchCase', 26, 33)
+    expect(c3.case).toBeNull()
+    expect(c3.block).toHaveLength(1)
+    node<IdentifierNode>(c3.block[0], 'Identifier', 31, 32, {
       name: 'd',
     })
   })

@@ -123,7 +123,13 @@ export interface IfNode extends BaseNode {
 export interface MatchNode extends BaseNode {
   type: 'Match'
   condition: AstExpressionNode
-  cases: { case: AstExpressionNode | null; block: AstNode[] }[]
+  cases: MatchCaseNode[]
+}
+
+export interface MatchCaseNode extends BaseNode {
+  type: 'MatchCase'
+  case: AstExpressionNode | null
+  block: AstNode[]
 }
 
 export interface NumberNode extends BaseNode {
@@ -190,6 +196,7 @@ export type AstFakeNode =
   | RootNode
   | CommentNode
   | CommentPlaceholderNode
+  | MatchCaseNode
   | StructLiteralEntryNode
 
 export type AstExpressionNode =
@@ -240,6 +247,7 @@ export type NodeMap = {
   Comment: CommentNode
   CommentPlaceholder: CommentPlaceholderNode
   Group: GroupNode
+  MatchCase: MatchCaseNode
   Newline: NewlineNode
   StructLiteralEntry: StructLiteralEntryNode
   // let statement
