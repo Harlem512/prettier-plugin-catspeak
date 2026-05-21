@@ -879,9 +879,11 @@ export function parse(
       while (!is('Punctuation', '}') && !is('EOF')) {
         const keyToken = current()
 
+        let isExpression = false
         let key: AstExpressionNode
         if (is('Punctuation', '[', keyToken)) {
           // MARK: { [exp()]: ... }
+          isExpression = true
           advance() // consume initial [
           key = parseExpression()
           expect('Punctuation', ']')
@@ -945,6 +947,7 @@ export function parse(
           type: 'StructLiteralEntry',
           key,
           value,
+          isIdentifier: !isExpression,
           range: getRange(keyToken),
         })
       }

@@ -519,16 +519,10 @@ const nodePrinters: {
     ])
   },
   StructLiteralEntry(path, options, print) {
-    // this is safe since this is the actual value of `entries`
-    const keyType = path.node.key.type
     let key = path.call(print, 'key')
 
     // non-identifiers require [brackets]
-    if (
-      keyType !== 'Identifier' &&
-      keyType !== 'Number' &&
-      keyType !== 'String'
-    ) {
+    if (!path.node.isIdentifier) {
       key = ['[', indentExp([softline, key], options), softline, ']']
     }
 
@@ -536,7 +530,7 @@ const nodePrinters: {
     if (!path.node.value) return key
 
     // key and value
-    return [key, ': ', path.call(print, 'value')]
+    return [group(key), ': ', path.call(print, 'value')]
   },
   // MARK: throw
   Throw(path, options, print) {

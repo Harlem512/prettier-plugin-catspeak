@@ -57,6 +57,7 @@ export interface AccessorNode extends BaseNode {
   type: 'Accessor'
   collection: AstExpressionNode
   key: AstExpressionNode
+  /** if the key is a identifier or an expression */
   isIdentifier: boolean
 }
 
@@ -156,6 +157,8 @@ export interface StructLiteralNode extends BaseNode {
 export interface StructLiteralEntryNode extends BaseNode {
   type: 'StructLiteralEntry'
   key: AstExpressionNode
+  /** if the key is a identifier or an expression */
+  isIdentifier: boolean
   value: AstExpressionNode | null
 }
 

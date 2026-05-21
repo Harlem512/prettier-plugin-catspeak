@@ -113,7 +113,6 @@ throw "hello" -- formatted as two no-op expressions
 ## TODO
 
 - Fix match expression formatting, refactor into sub-nodes
-- Fix identifier expression struct keys formatting to identifier keys `{[a]:b} => {a:b}`
 
 ## "Reference Material"
 

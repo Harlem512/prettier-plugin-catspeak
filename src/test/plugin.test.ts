@@ -366,8 +366,16 @@ describe('struct literal', () => {
   it('long key', test('{long:a}', '{\n\tlong: a,\n}'))
   it('long value', test('{a:long}', '{\n\ta: long,\n}'))
   it('long key value', test('{long:long}', '{\n\tlong: long,\n}'))
-  it('expression key', test('{["a"]:b}', '{ "a": b }'))
+  it('expression key', test('{["a"]:b}', '{ ["a"]: b }'))
   it('identifier expression key', test('{[a]:b}', '{ [a]: b }'))
+  it(
+    "long value doesn't wrap",
+    test('{[a]:long}', '{\n\t[\n\t\t\ta\n\t]: long,\n}'),
+  )
+  it(
+    "long value doesn't wrap, array",
+    test('{[a]:[long]}', '{\n\t[a]: [\n\t\tlong,\n\t],\n}'),
+  )
   it(
     'long expression key',
     test('{[long()]:b}', '{\n\t[\n\t\t\tlong()\n\t]: b,\n}'),
