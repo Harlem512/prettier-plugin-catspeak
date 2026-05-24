@@ -110,6 +110,14 @@ let throw -- no error
 throw "hello" -- formatted as two no-op expressions
 ```
 
+## Developers
+
+The repository consists of two parts, a Prettier plugin (living in `src/`) and the VSCode extension (living in `/vscode-extension`). All test cases operate on the plugin in isolation.
+
+- `npm test` in the root directory runs Jest with all test cases.
+- To test the extension, use VSCode's F5 Run Extension shortcut. This builds the plugin and extension, then opens a VSCode window.
+- `npm run extension-package` bundles the extension into a `.vsix` file placed in `/vscode-extension/dist`
+
 ## "Reference Material"
 
 - Astro's [Prettier plugin](https://github.com/withastro/prettier-plugin-astro)

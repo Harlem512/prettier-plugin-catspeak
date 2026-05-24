@@ -18,15 +18,16 @@
   },
   "license": "MIT",
   "author": "Harlem512",
-  "type": "module",
+  "type": "commonjs",
   "exports": {
     ".": "./out/index.js",
     "./package.json": "./package.json"
   },
   "scripts": {
     "build": "tsc -b --declaration",
+    "extension-package": "npm run build && cd vscode-extension && npm run package",
     "extension-watch": "npm run build && cd vscode-extension && npm run watch",
-    "extension-build": "npm run build && cd vscode-extension && npm run compile",
+    "extension-build": "npm run build && cd vscode-extension && npm run build",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest"
   },
   "dependencies": {

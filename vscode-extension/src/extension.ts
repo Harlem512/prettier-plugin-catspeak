@@ -121,6 +121,9 @@ async function tryFormat(
 }
 
 function createOutputChannel(name: string) {
+  function unstyle(str: string) {
+    return str.replace(/\x1B\[[0-9][0-9]?m/g, '')
+  }
   const out = window.createOutputChannel(name)
   return {
     log(...arr: any[]) {
@@ -136,14 +139,4 @@ function createOutputChannel(name: string) {
       }
     },
   }
-}
-function unstyle(str: string) {
-  return str.replace(/\x1B\[[0-9][0-9]?m/g, '')
-}
-
-function cmd(filepath: string | undefined, frompath = '') {
-  return normPath(path.relative(frompath, normPath(filepath ?? ''))) || '.'
-}
-function normPath(filepath: string) {
-  return filepath.replace(/^file:\/\/\//, '').replace(/\\\\?/g, '/')
 }

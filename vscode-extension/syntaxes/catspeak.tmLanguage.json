@@ -30,7 +30,7 @@
           "name": "constant.language.boolean.catspeak"
         },
         {
-          "match": "\\b(self|global)\\b",
+          "match": "\\b(self|global|other)\\b",
           "name": "variable.other.object.property.catspeak",
           "name2": "support.type.object.module.catspeak"
         },
@@ -54,7 +54,7 @@
           "name": "constant.character.catspeak"
         },
         {
-          "match": "#(?:[0-9a-fA-F]{3}){1,2}\\b",
+          "match": "#(?:[0-9a-fA-F]{3,4}){1,2}\\b",
           "name": "constant.language.catspeak"
         },
         {
@@ -103,7 +103,7 @@
           "name": "keyword.control.loop.catspeak"
         },
         {
-          "match": "\\b(return|do)\\b",
+          "match": "\\b(return|do|catch|throw)\\b",
           "name": "keyword.control.flow.catspeak"
         },
         {
@@ -111,7 +111,7 @@
           "name": "keyword.operator.logical.catspeak"
         },
         {
-          "match": "\\.|!|~|-|\\+|\\*|\\/|%|&|\\|\\^|<|>|=",
+          "match": "\\.|!|~|-|\\+|\\*|\\/|%|&|\\|\\^|<|>|=|\\|",
           "name": "keyword.operator.catspeak"
         },
         {
@@ -135,7 +135,12 @@
           "name": "variable.other.property.catspeak"
         },
         {
+          "__comment": "this makes normal variables green, which i dont like",
           "match__": "\\b[A-Za-z_][A-Za-z_\\-0-9]*\\b",
+          "name": "variable.name.catspeak"
+        },
+        {
+          "match": "`\\b[A-Za-z_][A-Za-z_\\-0-9]*\\b`",
           "name": "variable.name.catspeak"
         }
       ]

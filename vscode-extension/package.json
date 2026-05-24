@@ -2,9 +2,14 @@
   "name": "prettier-catspeak",
   "displayName": "Prettier Formatter: Catspeak",
   "description": "A code formatter for Catspeak built with Prettier",
+  "publisher": "Harlem512",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.120.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Harlem512/prettier-plugin-catspeak.git"
   },
   "categories": [
     "Formatters"
@@ -18,10 +23,11 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "package": "vsce package --out dist/",
+    "vscode:prepublish": "npm run build",
+    "build": "tsc --noEmit && node esbuild.cjs --production",
     "watch": "tsc -watch -p ./"
   },
   "type": "module",
@@ -32,6 +38,8 @@
   "devDependencies": {
     "@types/node": "^22.19.19",
     "@types/vscode": "^1.120.0",
+    "@vscode/vsce": "^3.9.1",
+    "esbuild": "^0.28.0",
     "typescript": "^5.9.3"
   },
   "contributes": {
