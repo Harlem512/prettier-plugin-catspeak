@@ -2,15 +2,22 @@
 
 > Once men turned their thinking over to machines in the hope that this would set them free. But that only permitted other men with machines to enslave them.
 
-An unofficial Prettier plugin for formatting Catspeak's `.meow` files. Still a work in-progress.
+An unofficial Prettier plugin for formatting Catspeak's `.meow` files and providing syntax highlighting. Still a work in-progress.
 
 ## Features
 
+- Catspeak syntax highlighting!
 - Pretty printing using Prettier's algorithm and mostly following Javascript formatting.
 - Lovingly hand-written printing and ast-building logic.
 - Comment support using Prettier's builtin plugin comment algorithm (it tries its best).
 - Doesn't format files with syntax errors.
 - Test cases!
+
+## To Install
+
+Download a [release](https://github.com/Harlem512/prettier-plugin-catspeak/releases) and run the `Extensions: Install from VSIX...` command palette option to install it.
+
+Marketplace download coming when it's done.
 
 ## Options
 

@@ -6,6 +6,7 @@ An unofficial extension for formatting [Catspeak](https://github.com/katsaii/cat
 
 ## Features
 
+- Catspeak syntax highlighting!
 - Pretty printing using Prettier's algorithm and mostly following Javascript formatting.
 - Lovingly hand-written printing and ast-building logic.
 - Comment support using Prettier's builtin plugin comment algorithm (it tries its best).
