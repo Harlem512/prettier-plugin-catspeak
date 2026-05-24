@@ -118,6 +118,11 @@ The repository consists of two parts, a Prettier plugin (living in `src/`) and t
 - To test the extension, use VSCode's F5 Run Extension shortcut. This builds the plugin and extension, then opens a VSCode window.
 - `npm run extension-package` bundles the extension into a `.vsix` file placed in `/vscode-extension/dist`
 
+## TODO
+
+- If-else wrapping (if `if` wraps, `else` should also wrap)
+- New-line before statements to force wrapping (?)
+
 ## "Reference Material"
 
 - Astro's [Prettier plugin](https://github.com/withastro/prettier-plugin-astro)
