@@ -127,8 +127,48 @@ The repository consists of two parts, a Prettier plugin (living in `src/`) and t
 
 ## TODO
 
-- If-else wrapping (if `if` wraps, `else` should also wrap)
 - New-line before statements to force wrapping (?)
+
+Formatting weirdness (to fix):
+
+```sp
+if true {
+  a
+  -- comment at end of block
+} else {
+  b
+}
+```
+
+```sp
+{
+  -- comment
+  a,
+
+  -- line above comment disappears
+  b,
+}
+```
+
+```sp
+-- if blocks should not wrap
+if true {
+  short
+} else {
+  long
+}
+```
+
+```sp
+if
+  a
+  and b
+  and c
+{
+  -- wrapped operator should go like above
+  -- ie both `ands` should be on same line, not wrapped in sadness
+}
+```
 
 ## "Reference Material"
 
