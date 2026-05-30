@@ -408,15 +408,17 @@ const nodePrinters: {
         line,
         '{',
       ]),
-      group([printBlock(path, 'ifBlock', print, options), line, '}']),
+      // if block
+      printBlock(path, 'ifBlock', print, options),
+      line,
+      '}',
+      // else block
       path.node.elseBlock
-        ? [
-            ' else {',
-            group([printBlock(path, 'elseBlock', print, options), line, '}']),
-          ]
+        ? [' else {', printBlock(path, 'elseBlock', print, options), line, '}']
         : '',
-      path.node.ifElseExpression
-        ? [' else ', group(path.call(print, 'ifElseExpression'))]
+      // special if-else handler
+      path.node.elseIfExpression
+        ? [' else ', path.call(print, 'elseIfExpression')]
         : '',
     ])
   },
@@ -572,7 +574,7 @@ export const printer: Printer<AstNode> = {
     )
   },
   printComment(path) {
-    // ensure comment-only node
+    // only comment nodes can be properly printed
     if (path.node.type !== 'Comment') return path.node.type
     // default comment print
     return path.node.value.trimEnd()
@@ -608,7 +610,7 @@ export const printer: Printer<AstNode> = {
           node.condition,
           ...node.ifBlock,
           ...(node.elseBlock ?? []),
-          ...(node.ifElseExpression ? [node.ifElseExpression] : []),
+          ...(node.elseIfExpression ? [node.elseIfExpression] : []),
         ]
       case 'LetStatement':
         return node.value ? [node.identifier, node.value] : [node.identifier]

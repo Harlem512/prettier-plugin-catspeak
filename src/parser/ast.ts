@@ -117,7 +117,7 @@ export interface IfNode extends BaseNode {
   condition: AstExpressionNode
   ifBlock: AstNode[]
   elseBlock: AstNode[] | null
-  ifElseExpression: AstExpressionNode | null
+  elseIfExpression: AstExpressionNode | null
 }
 
 export interface MatchNode extends BaseNode {

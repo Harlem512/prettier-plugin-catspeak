@@ -387,14 +387,14 @@ export function parse(
       const ifBlock = parseBlock()
 
       let elseBlock: IfNode['elseBlock'] = null
-      let ifElseExpression: IfNode['ifElseExpression'] = null
+      let elseIfExpression: IfNode['elseIfExpression'] = null
 
       if (is('Keyword', 'else')) {
         // MARK: else
         advance() // consume else
         if (is('Keyword', 'if')) {
           // MARK: else if
-          ifElseExpression = parseExpression()
+          elseIfExpression = parseExpression()
         } else {
           elseBlock = parseBlock()
         }
@@ -404,7 +404,7 @@ export function parse(
         condition,
         ifBlock,
         elseBlock,
-        ifElseExpression,
+        elseIfExpression,
         range: getRange(peeked),
       }
     } else if (

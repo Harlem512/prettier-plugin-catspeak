@@ -210,6 +210,8 @@ describe('do', () => {
   it('long block', test('do{long}', 'do {\n\tlong\n}'))
   it('empty block', test('do{}', 'do { }'))
   it('comments', test('--\ndo--\n{a--\n}', '--\ndo {\n\t--\n\ta --\n}'))
+  it('comment after', test('do{a\n\n--\n}b', 'do {\n\ta\n\n\t--\n}\nb'))
+  it('comment after 2', test('do{a\n--\n}b', 'do {\n\ta\n\t--\n}\nb'))
 })
 
 // MARK: fun
@@ -234,7 +236,7 @@ describe('fun', () => {
 describe('if', () => {
   describe('no else', () => {
     it('simple', test('if a{}', 'if a { }'))
-    it('long condition', test('if long{}', 'if\n\t\tlong\n{ }'))
+    it('long condition', test('if long{}', 'if\n\t\tlong\n{\n}'))
     it('long body', test('if a{long}', 'if a {\n\tlong\n}'))
     it(
       'long body and condition',
@@ -245,25 +247,28 @@ describe('if', () => {
     // 0 0 0
     it('simple', test('if a{}else{}', 'if a { } else { }'))
     // 0 0 1
-    it('long else', test('if a{}else{long}', 'if a { } else {\n\tlong\n}'))
+    it('long else', test('if a{}else{long}', 'if a {\n} else {\n\tlong\n}'))
     // 0 1 0
-    it('long if', test('if a{long}else{}', 'if a {\n\tlong\n} else { }'))
+    it('long if', test('if a{long}else{}', 'if a {\n\tlong\n} else {\n}'))
     // 0 1 1
     it(
       'long if, long else',
       test('if a{long}else{long}', 'if a {\n\tlong\n} else {\n\tlong\n}'),
     )
     // 1 0 0
-    it('long condition', test('if long{}else{}', 'if\n\t\tlong\n{ } else { }'))
+    it(
+      'long condition',
+      test('if long{}else{}', 'if\n\t\tlong\n{\n} else {\n}'),
+    )
     // 1 0 1
     it(
       'long condition, long else',
-      test('if long{}else{long}', 'if\n\t\tlong\n{ } else {\n\tlong\n}'),
+      test('if long{}else{long}', 'if\n\t\tlong\n{\n} else {\n\tlong\n}'),
     )
     // 1 1 0
     it(
       'long condition, long else',
-      test('if long{long}else{}', 'if\n\t\tlong\n{\n\tlong\n} else { }'),
+      test('if long{long}else{}', 'if\n\t\tlong\n{\n\tlong\n} else {\n}'),
     )
     // 1 1 1
     it(
@@ -272,10 +277,6 @@ describe('if', () => {
         'if long{long}else{long}',
         'if\n\t\tlong\n{\n\tlong\n} else {\n\tlong\n}',
       ),
-    )
-    it(
-      'weird comment',
-      test('if a{}\n\n\n\n--\n\n\n\n\nelse{}', 'if a { } else {\n\t--\n}'),
     )
   })
   describe('else if', () => {
@@ -287,18 +288,42 @@ describe('if', () => {
       ),
     )
     it(
+      'simple',
+      test(
+        'if a{long}else if c{d}else{e}',
+        'if a {\n\tlong\n} else if c { d } else { e }',
+      ),
+    )
+    it(
       'wrapped elseif condition',
       test(
         'if a{\t\nb}else if long{d}else{e}',
-        'if a { b } else if\n\t\tlong\n{ d } else { e }',
+        'if a {\n\tb\n} else if\n\t\tlong\n{\n\td\n} else {\n\te\n}',
       ),
     )
     it(
       'elseif stays on one line',
       test(
         'if a{\t\nlong}else if long{d}else{e}',
-        'if a {\n\tlong\n} else if\n\t\tlong\n{ d } else { e }',
+        'if a {\n\tlong\n} else if\n\t\tlong\n{\n\td\n} else {\n\te\n}',
       ),
+    )
+  })
+  describe('comments', () => {
+    it(
+      'comment outside block, before else',
+      test('if a{}\n\n\n\n--\n\n\n\n\nelse{}', 'if a {\n} else {\n\t--\n}'),
+    )
+    it(
+      'comment between elseif blocks',
+      test(
+        'if a{a\n\n\n--\n}else\n\n\nif b{}',
+        'if a {\n\ta\n\t--\n} else if b { }',
+      ),
+    )
+    it(
+      'comment between else blocks',
+      test('if a{a\n\n\n--\n}else\n\n\n{}', 'if a {\n\ta\n\t--\n} else { }'),
     )
   })
 })

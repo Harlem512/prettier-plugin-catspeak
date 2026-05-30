@@ -135,7 +135,7 @@ Formatting weirdness (to fix):
 if true {
   a
   -- comment at end of block
-} else {
+} else if false {
   b
 }
 ```
@@ -151,15 +151,6 @@ if true {
 ```
 
 ```sp
--- if blocks should not wrap
-if true {
-  short
-} else {
-  long
-}
-```
-
-```sp
 if
   a
   and b
@@ -168,6 +159,12 @@ if
   -- wrapped operator should go like above
   -- ie both `ands` should be on same line, not wrapped in sadness
 }
+```
+
+```sp
+let a = if true {
+      -- double indented (depending on setting) so assignment is obvious
+    }
 ```
 
 ## "Reference Material"
