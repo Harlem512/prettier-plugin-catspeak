@@ -203,6 +203,20 @@ function joinSemicolon<T extends AstNode>(
   )
 }
 
+function indentAssignment(node: AstNode) {
+  switch (node.type) {
+    case 'Catch':
+    case 'Do':
+    case 'If':
+    case 'Match':
+    case 'While':
+    case 'With':
+      return true
+    default:
+      return false
+  }
+}
+
 // MARK: PRINTERS
 const nodePrinters: {
   [Type in NodeType]: (
@@ -268,12 +282,14 @@ const nodePrinters: {
     // no value, only identifier
     if (!path.node.value) return ['let ', path.call(print, 'identifier')]
 
+    const value = path.call(print, 'value')
+
     // assignments always fit on a single line
     return [
       'let ',
       path.call(print, 'identifier'),
       ' = ',
-      indentExp(path.call(print, 'value'), options),
+      indentAssignment(path.node.value) ? indentExp(value, options) : value,
     ]
   },
   // MARK: a[b]
@@ -318,13 +334,15 @@ const nodePrinters: {
   },
   // MARK: a = b
   Assignment(path, options, print) {
+    const value = path.call(print, 'value')
+
     // assignment always fits on one line
     return [
       path.call(print, 'identifier'),
       ' ',
       path.node.operator,
       ' ',
-      indentExp(path.call(print, 'value'), options),
+      indentAssignment(path.node.value) ? indentExp(value, options) : value,
     ]
   },
   // MARK: break

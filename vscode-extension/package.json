@@ -3,7 +3,7 @@
   "displayName": "Prettier Formatter: Catspeak",
   "description": "A code formatter (and syntax highlighter) for Catspeak built with Prettier",
   "publisher": "Harlem512",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.120.0"
   },

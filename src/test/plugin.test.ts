@@ -75,8 +75,12 @@ describe('let statement', () => {
   it('long value', test('let a=\n\t\tlong', 'let a = long'))
   it('double long', test('let \n\t\tlong=long', 'let long = long'))
   it(
-    'assign from line break',
-    test('let long=do{long}', 'let long = do {\n\t\t\tlong\n\t\t}'),
+    'assign from line break, with indent',
+    test('let a=do{long}', 'let a = do {\n\t\t\tlong\n\t\t}'),
+  )
+  it(
+    'assign from line break, without indent',
+    test('let a=fun{long}', 'let a = fun () {\n\tlong\n}'),
   )
 })
 
@@ -125,7 +129,6 @@ describe('array literal', () => {
   it('long', test('[    long b]', '[\n\tlong,\n\tb,\n]'))
   it('empty', test('[\n]', '[]'))
   it('with newline', test('[\n\n\na\n\n\n\n\nb]', '[\n\ta,\n\n\tb,\n]'))
-  it('comma inside', test('[\n--hello\n]', '[\n\t--hello\n]'))
   describe('comma tests', () => {
     // options tests
     it(
@@ -155,6 +158,14 @@ describe('array literal', () => {
       test('[   a,long\n,]', '[\n\ta,\n\tlong\n]', {
         commaMode: CommaMode.NORMAL,
       }),
+    )
+  })
+  describe('comments', () => {
+    it('empty', test('[\n--hello\n]', '[\n\t--hello\n]'))
+    it('above item', test('[--\na]', '[\n\t--\n\ta,\n]'))
+    it(
+      'newline between commented items',
+      test('[--\na\n\n\n\n--\na]', '[\n\t--\n\ta,\n\n\t--\n\ta,\n]'),
     )
   })
 })
@@ -447,6 +458,10 @@ describe('struct literal', () => {
     it(
       'before expression key',
       test('{--\n["a"]:b}', '{\n\t--\n\t["a"]: b,\n}'),
+    )
+    it(
+      'newline between commented entries',
+      test('{--\na\n\n\n\n--\na}', '{\n\t--\n\ta,\n\n\t--\n\ta,\n}'),
     )
   })
 })
