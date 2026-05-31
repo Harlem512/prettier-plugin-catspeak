@@ -31,6 +31,8 @@ export const parsers: Record<string, Parser<AstNode>> = {
         throw error
       }
 
+      console.log(JSON.stringify(result, undefined, 2))
+
       return result.ast
     },
     astFormat: 'catspeak',

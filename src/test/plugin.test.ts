@@ -74,6 +74,10 @@ describe('let statement', () => {
   it('long identifier', test('let long\n\t\t=a', 'let long = a'))
   it('long value', test('let a=\n\t\tlong', 'let a = long'))
   it('double long', test('let \n\t\tlong=long', 'let long = long'))
+  it(
+    'assign from line break',
+    test('let long=do{long}', 'let long = do {\n\t\t\tlong\n\t\t}'),
+  )
 })
 
 // MARK: root
@@ -378,12 +382,27 @@ describe('operator', () => {
     it('a + long', test('a+long', 'a\n\t\t+ long', o))
     it('long + b', test('long+b', 'long\n\t\t+ b', o))
     it('long + long', test('long+long', 'long\n\t\t+ long', o))
+    it(
+      'many wrapped operators',
+      test(
+        'long+long-long*long/long-long',
+        'long\n\t\t+ long\n\t\t- long\n\t\t\t\t* long\n\t\t\t\t/ long\n\t\t- long',
+        o,
+      ),
+    )
   })
 
   describe("don't wrap operator", () => {
     it('a + long', test('a+long', 'a +\n\t\tlong'))
     it('long + b', test('long+b', 'long +\n\t\tb'))
     it('long + long', test('long+long', 'long +\n\t\tlong'))
+    it(
+      'many wrapped operators',
+      test(
+        'long+long-long*long/long-long',
+        'long +\n\t\tlong -\n\t\tlong *\n\t\t\t\tlong /\n\t\t\t\tlong -\n\t\tlong',
+      ),
+    )
   })
 })
 

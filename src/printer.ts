@@ -273,7 +273,7 @@ const nodePrinters: {
       'let ',
       path.call(print, 'identifier'),
       ' = ',
-      path.call(print, 'value'),
+      indentExp(path.call(print, 'value'), options),
     ]
   },
   // MARK: a[b]
@@ -324,7 +324,7 @@ const nodePrinters: {
       ' ',
       path.node.operator,
       ' ',
-      path.call(print, 'value'),
+      indentExp(path.call(print, 'value'), options),
     ]
   },
   // MARK: break

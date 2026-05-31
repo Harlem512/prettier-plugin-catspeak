@@ -141,23 +141,6 @@ Formatting weirdness (to fix):
 }
 ```
 
-```sp
-if
-  a
-  and b
-  and c
-{
-  -- wrapped operator should go like above
-  -- ie both `ands` should be on same line, not wrapped in sadness
-}
-```
-
-```sp
-let a = if true {
-      -- double indented (depending on setting) so assignment is obvious
-    }
-```
-
 ## "Reference Material"
 
 - Astro's [Prettier plugin](https://github.com/withastro/prettier-plugin-astro)
