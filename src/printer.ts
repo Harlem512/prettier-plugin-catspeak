@@ -203,16 +203,6 @@ function joinSemicolon<T extends AstNode>(
   )
 }
 
-// MARK: printBlock
-function printBlock<N extends AstNode>(
-  path: AstPath<N>,
-  blockKey: IterProperties<N>,
-  print: (path: AstPath<AstNode>) => Doc,
-  options: ParserOptions<AstNode>,
-): Doc {
-  return joinWithComments(path, blockKey, print, options, line, joinSemicolon)
-}
-
 // MARK: PRINTERS
 const nodePrinters: {
   [Type in NodeType]: (
@@ -226,6 +216,15 @@ const nodePrinters: {
     args?: unknown,
   ) => Doc
 } = {
+  // MARK: block
+  Block(path, options, print) {
+    return [
+      '{',
+      joinWithComments(path, 'children', print, options, line, joinSemicolon),
+      line,
+      '}',
+    ]
+  },
   // comments are printed elsewhere
   Comment(path) {
     throw new Error(
@@ -236,7 +235,7 @@ const nodePrinters: {
   CommentPlaceholder() {
     return ''
   },
-  // MARK: block
+  // MARK: root
   Root(path, options, print) {
     const body = joinSemicolon(path, 'block', print, options)
 
@@ -358,8 +357,8 @@ const nodePrinters: {
       group([path.call(print, 'expression')]),
       ' catch',
       path.node.identifier ? [' ', path.call(print, 'identifier')] : '',
-      ' {',
-      group([printBlock(path, 'block', print, options), line, '}']),
+      ' ',
+      path.call(print, 'block'),
     ])
   },
   // MARK: continue
@@ -368,14 +367,14 @@ const nodePrinters: {
   },
   // MARK: do { }
   Do(path, options, print) {
-    return group(['do {', printBlock(path, 'block', print, options), line, '}'])
+    return group(['do ', path.call(print, 'block')])
   },
   // MARK: fun { }
   Function(path, options, print) {
     // fun ... {
     const args =
       options.emptyFunctionArguments && path.node.arguments.length === 0
-        ? 'fun {'
+        ? 'fun '
         : [
             'fun (',
             group(
@@ -385,15 +384,10 @@ const nodePrinters: {
               ),
             ),
             softline,
-            ') {',
+            ') ',
           ]
 
-    return group([
-      group(args),
-      printBlock(path, 'block', print, options),
-      line,
-      '}',
-    ])
+    return group([group(args), path.call(print, 'block')])
   },
   // MARK: foo
   Identifier(path) {
@@ -406,17 +400,12 @@ const nodePrinters: {
         'if',
         indentExp([line, path.call(print, 'condition')], options),
         line,
-        '{',
       ]),
       // if block
-      printBlock(path, 'ifBlock', print, options),
-      line,
-      '}',
+      path.call(print, 'ifBlock'),
       // else block
-      path.node.elseBlock
-        ? [' else {', printBlock(path, 'elseBlock', print, options), line, '}']
-        : '',
-      // special if-else handler
+      path.node.elseBlock ? [' else ', path.call(print, 'elseBlock')] : '',
+      // special else-if handler
       path.node.elseIfExpression
         ? [' else ', path.call(print, 'elseIfExpression')]
         : '',
@@ -446,13 +435,7 @@ const nodePrinters: {
       : ['else ']
 
     // print body of the case/else
-    return group([
-      caseDoc,
-      '{',
-      printBlock(path, 'block', print, options),
-      line,
-      '}',
-    ])
+    return group([caseDoc, path.call(print, 'block')])
   },
   // MARK: 123
   Number(path) {
@@ -537,9 +520,8 @@ const nodePrinters: {
         'while',
         indentExp([line, path.call(print, 'condition')], options),
         line,
-        '{',
       ]),
-      group([printBlock(path, 'block', print, options), line, '}']),
+      path.call(print, 'block'),
     ])
   },
   // MARK: with
@@ -549,9 +531,8 @@ const nodePrinters: {
         'with',
         indentExp([line, path.call(print, 'condition')], options),
         line,
-        '{',
       ]),
-      group([printBlock(path, 'block', print, options), line, '}']),
+      path.call(print, 'block'),
     ])
   },
 }
@@ -586,70 +567,86 @@ export const printer: Printer<AstNode> = {
   },
   // MARK: comment child nodes
   getCommentChildNodes(node) {
-    switch (node.type) {
-      case 'Accessor':
-        return [node.key, node.collection]
-      case 'ArrayLiteral':
-        return node.values
-      case 'Assignment':
-        return [node.identifier, node.value]
-      case 'Call':
-        return [node.fun, ...(node.arguments ?? [])]
-      case 'Catch':
-        return node.identifier
-          ? [node.expression, node.identifier, ...node.block]
-          : [node.expression, ...node.block]
-      case 'Do':
-        return node.block
-      case 'Function':
-        return [...node.arguments, ...node.block]
-      case 'Group':
-        return [node.inside]
-      case 'If':
-        return [
-          node.condition,
-          ...node.ifBlock,
-          ...(node.elseBlock ?? []),
-          ...(node.elseIfExpression ? [node.elseIfExpression] : []),
-        ]
-      case 'LetStatement':
-        return node.value ? [node.identifier, node.value] : [node.identifier]
-      case 'Match':
-        return [node.condition, ...node.cases]
-      case 'MatchCase':
-        return node.case ? [node.case, ...node.block] : node.block
-      case 'Operator':
-        return [node.left, node.right]
-      case 'Return':
-        return node.value ? [node.value] : []
-      case 'Root':
-        return node.block
-      case 'StructLiteral':
-        return node.entries
-      case 'StructLiteralEntry':
-        return node.value ? [node.key, node.value] : [node.key]
-      case 'Throw':
-        return [node.value]
-      case 'Unary':
-        return [node.value]
-      case 'While':
-        return [node.condition, ...node.block]
-      case 'With':
-        return [node.condition, ...node.block]
-      // terminals
-      case 'String':
-      case 'Number':
-      case 'Identifier':
-      case 'Continue':
-      case 'Break':
-      // fake nodes
-      case 'Newline':
-      case 'Comment':
-      case 'CommentPlaceholder':
-        return []
-      default:
-        const _: never = node
-        return []
+    const ar: AstNode[] = []
+    const potentialChildren = getCommentChildren(node)
+
+    for (const child of potentialChildren) {
+      if (!child) continue
+      if (Array.isArray(child)) {
+        ar.push(...child)
+      } else {
+        ar.push(child)
+      }
     }
+
+    return ar
   },
+}
+
+function getCommentChildren(node: AstNode): (AstNode | AstNode[] | null)[] {
+  switch (node.type) {
+    case 'Accessor':
+      return [node.key, node.collection]
+    case 'ArrayLiteral':
+      return node.values
+    case 'Assignment':
+      return [node.identifier, node.value]
+    case 'Block':
+      return node.children
+    case 'Call':
+      return [node.fun, node.arguments]
+    case 'Catch':
+      return [node.expression, node.identifier, node.block]
+    case 'Do':
+      return [node.block]
+    case 'Function':
+      return [node.arguments, node.block]
+    case 'Group':
+      return [node.inside]
+    case 'If':
+      return [
+        node.condition,
+        node.ifBlock,
+        node.elseBlock,
+        node.elseIfExpression,
+      ]
+    case 'LetStatement':
+      return [node.identifier, node.value]
+    case 'Match':
+      return [node.condition, node.cases]
+    case 'MatchCase':
+      return [node.case, node.block]
+    case 'Operator':
+      return [node.left, node.right]
+    case 'Return':
+      return [node.value]
+    case 'Root':
+      return node.block
+    case 'StructLiteral':
+      return node.entries
+    case 'StructLiteralEntry':
+      return [node.key, node.value]
+    case 'Throw':
+      return [node.value]
+    case 'Unary':
+      return [node.value]
+    case 'While':
+      return [node.condition, node.block]
+    case 'With':
+      return [node.condition, node.block]
+    // terminals
+    case 'String':
+    case 'Number':
+    case 'Identifier':
+    case 'Continue':
+    case 'Break':
+    // fake nodes
+    case 'Newline':
+    case 'Comment':
+    case 'CommentPlaceholder':
+      return []
+    default:
+      const _: never = node
+      return []
+  }
 }

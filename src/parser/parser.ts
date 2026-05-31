@@ -2,6 +2,7 @@ import type {
   ArrayLiteralNode,
   AstExpressionNode,
   AstNode,
+  BlockNode,
   CatchNode,
   CommentNode,
   CommentPlaceholderNode,
@@ -221,6 +222,14 @@ export function parse(
 
     return nodes
   }
+  function parseBlock2(): BlockNode {
+    const start = current()
+    return {
+      type: 'Block',
+      children: parseBlock(),
+      range: getRange(start),
+    }
+  }
 
   // MARK: statement
   function parseStatement(): AstNode | null {
@@ -363,7 +372,7 @@ export function parse(
         type: 'Catch',
         identifier,
         expression: result,
-        block: parseBlock(),
+        block: parseBlock2(),
         range: getRange(result),
       }
     }
@@ -377,14 +386,14 @@ export function parse(
 
       return {
         type: 'Do',
-        block: parseBlock(),
+        block: parseBlock2(),
         range: getRange(peeked),
       }
     } else if (is('Keyword', 'if', peeked)) {
       // MARK: if
       advance() // consume if
       const condition = parseCondition()
-      const ifBlock = parseBlock()
+      const ifBlock = parseBlock2()
 
       let elseBlock: IfNode['elseBlock'] = null
       let elseIfExpression: IfNode['elseIfExpression'] = null
@@ -396,9 +405,10 @@ export function parse(
           // MARK: else if
           elseIfExpression = parseExpression()
         } else {
-          elseBlock = parseBlock()
+          elseBlock = parseBlock2()
         }
       }
+
       return {
         type: 'If',
         condition,
@@ -414,12 +424,11 @@ export function parse(
       // MARK: while with
       advance() // consume while/with
       const condition = parseCondition()
-      const block = parseBlock()
 
       return {
         type: peeked.value === 'while' ? 'While' : 'With',
         condition,
-        block,
+        block: parseBlock2(),
         range: getRange(peeked),
       }
     } else if (is('Keyword', 'match', peeked)) {
@@ -448,11 +457,10 @@ export function parse(
           )
         }
 
-        const block = parseBlock()
         appendNodeArray(cases, {
           type: 'MatchCase',
           case: caseExp,
-          block: block,
+          block: parseBlock2(),
           range: getRange(tok),
         })
       }
@@ -493,12 +501,10 @@ export function parse(
         advance() // consume closing )
       }
 
-      const body = parseBlock()
-
       return {
         type: 'Function',
         arguments: args,
-        block: body,
+        block: parseBlock2(),
         range: getRange(peeked),
       }
     } else {

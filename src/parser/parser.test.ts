@@ -17,6 +17,7 @@ import {
   RootNode,
   CommentPlaceholderNode,
   MatchCaseNode,
+  BlockNode,
 } from './ast.js'
 import type { Position } from './lexer.js'
 import { parse as baseParse } from './parser.js'
@@ -414,8 +415,9 @@ describe('function expression', () => {
     expect(n.arguments).toHaveLength(2)
     node<IdentifierNode>(n.arguments[0], 'Identifier', 5, 6, { name: 'a' })
     node<IdentifierNode>(n.arguments[1], 'Identifier', 8, 9, { name: 'b' })
-    expect(n.block).toHaveLength(1)
-    node<NumberNode>(n.block[0], 'Number', 13, 16, { value: '123' })
+    const block = node<BlockNode>(n.block, 'Block', 11, 18)
+    expect(block.children).toHaveLength(1)
+    node<NumberNode>(block.children[0], 'Number', 13, 16, { value: '123' })
   })
 
   it('no arg commas', () => {
@@ -424,32 +426,41 @@ describe('function expression', () => {
     expect(n.arguments).toHaveLength(2)
     node<IdentifierNode>(n.arguments[0], 'Identifier', 5, 6, { name: 'a' })
     node<IdentifierNode>(n.arguments[1], 'Identifier', 7, 8, { name: 'b' })
-    expect(n.block).toHaveLength(1)
-    node<NumberNode>(n.block[0], 'Number', 12, 15, { value: '123' })
+    const block = node<BlockNode>(n.block, 'Block', 10, 17)
+    expect(block.children).toHaveLength(1)
+    node<NumberNode>(block.children[0], 'Number', 12, 15, { value: '123' })
   })
 
   it('no args, no body', () => {
     const res = parse('fun () { }')
     const n = node<FunctionNode>(res.ast.block[0], 'Function', 0, 10)
     expect(n.arguments).toHaveLength(0)
-    expect(n.block).toHaveLength(1)
-    node<CommentPlaceholderNode>(n.block[0], 'CommentPlaceholder', 10, 10)
+    const block = node<BlockNode>(n.block, 'Block', 7, 10)
+    expect(block.children).toHaveLength(1)
+    node<CommentPlaceholderNode>(
+      block.children[0],
+      'CommentPlaceholder',
+      10,
+      10,
+    )
   })
 
   it('no args, no body, no parenthesis', () => {
     const res = parse('fun { }')
     const n = node<FunctionNode>(res.ast.block[0], 'Function', 0, 7)
     expect(n.arguments).toHaveLength(0)
-    expect(n.block).toHaveLength(1)
-    node<CommentPlaceholderNode>(n.block[0], 'CommentPlaceholder', 7, 7)
+    const block = node<BlockNode>(n.block, 'Block', 4, 7)
+    expect(block.children).toHaveLength(1)
+    node<CommentPlaceholderNode>(block.children[0], 'CommentPlaceholder', 7, 7)
   })
 
   it('no args', () => {
     const res = parse('fun { 123 }')
     const n = node<FunctionNode>(res.ast.block[0], 'Function', 0, 11)
     expect(n.arguments).toHaveLength(0)
-    expect(n.block).toHaveLength(1)
-    node<NumberNode>(n.block[0], 'Number', 6, 9, { value: '123' })
+    const block = node<BlockNode>(n.block, 'Block', 4, 11)
+    expect(block.children).toHaveLength(1)
+    node<NumberNode>(block.children[0], 'Number', 6, 9, { value: '123' })
   })
 })
 
@@ -471,22 +482,25 @@ describe('match', () => {
     // case 1
     const c1 = node<MatchCaseNode>(n.cases[0], 'MatchCase', 8, 17)
     node<NumberNode>(c1.case!, 'Number', 13, 14, { value: '1' })
-    expect(c1.block).toHaveLength(1)
-    node<IdentifierNode>(c1.block[0], 'Identifier', 15, 16, {
+    const c1Block = node<BlockNode>(c1.block, 'Block', 14, 17)
+    expect(c1Block.children).toHaveLength(1)
+    node<IdentifierNode>(c1Block.children[0], 'Identifier', 15, 16, {
       name: 'b',
     })
     // case 2
     const c2 = node<MatchCaseNode>(n.cases[1], 'MatchCase', 17, 26)
     node<NumberNode>(c2.case!, 'Number', 22, 23, { value: '2' })
-    expect(c2.block).toHaveLength(1)
-    node<IdentifierNode>(c2.block[0], 'Identifier', 24, 25, {
+    const c2Block = node<BlockNode>(c2.block, 'Block', 23, 26)
+    expect(c2Block.children).toHaveLength(1)
+    node<IdentifierNode>(c2Block.children[0], 'Identifier', 24, 25, {
       name: 'c',
     })
     // else
     const c3 = node<MatchCaseNode>(n.cases[2], 'MatchCase', 26, 33)
     expect(c3.case).toBeNull()
-    expect(c3.block).toHaveLength(1)
-    node<IdentifierNode>(c3.block[0], 'Identifier', 31, 32, {
+    const c3Block = node<BlockNode>(c3.block, 'Block', 30, 33)
+    expect(c3Block.children).toHaveLength(1)
+    node<IdentifierNode>(c3Block.children[0], 'Identifier', 31, 32, {
       name: 'd',
     })
   })

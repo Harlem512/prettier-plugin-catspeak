@@ -18,6 +18,11 @@ export interface RootNode extends BaseNode {
   isRoot: boolean
 }
 
+export interface BlockNode extends BaseNode {
+  type: 'Block'
+  children: AstNode[]
+}
+
 export interface CommentNode extends BaseNode {
   type: 'Comment'
   value: string
@@ -89,7 +94,7 @@ export interface CatchNode extends BaseNode {
   type: 'Catch'
   expression: AstExpressionNode
   identifier: IdentifierNode | null
-  block: AstNode[]
+  block: BlockNode
 }
 
 export interface ContinueNode extends BaseNode {
@@ -98,13 +103,13 @@ export interface ContinueNode extends BaseNode {
 
 export interface DoNode extends BaseNode {
   type: 'Do'
-  block: AstNode[]
+  block: BlockNode
 }
 
 export interface FunctionNode extends BaseNode {
   type: 'Function'
   arguments: IdentifierNode[]
-  block: AstNode[]
+  block: BlockNode
 }
 
 export interface IdentifierNode extends BaseNode {
@@ -115,8 +120,8 @@ export interface IdentifierNode extends BaseNode {
 export interface IfNode extends BaseNode {
   type: 'If'
   condition: AstExpressionNode
-  ifBlock: AstNode[]
-  elseBlock: AstNode[] | null
+  ifBlock: BlockNode
+  elseBlock: BlockNode | null
   elseIfExpression: AstExpressionNode | null
 }
 
@@ -129,7 +134,7 @@ export interface MatchNode extends BaseNode {
 export interface MatchCaseNode extends BaseNode {
   type: 'MatchCase'
   case: AstExpressionNode | null
-  block: AstNode[]
+  block: BlockNode
 }
 
 export interface NumberNode extends BaseNode {
@@ -182,18 +187,19 @@ export interface UnaryNode extends BaseNode {
 export interface WithNode extends BaseNode {
   type: 'With'
   condition: AstExpressionNode
-  block: AstNode[]
+  block: BlockNode
 }
 
 export interface WhileNode extends BaseNode {
   type: 'While'
   condition: AstExpressionNode
-  block: AstNode[]
+  block: BlockNode
 }
 
 // non-statement, non-expression nodes (used internally)
 export type AstFakeNode =
   | RootNode
+  | BlockNode
   | CommentNode
   | CommentPlaceholderNode
   | MatchCaseNode
@@ -244,6 +250,7 @@ export interface ParseResult {
 export type NodeMap = {
   // fake nodes
   Root: RootNode
+  Block: BlockNode
   Comment: CommentNode
   CommentPlaceholder: CommentPlaceholderNode
   Group: GroupNode

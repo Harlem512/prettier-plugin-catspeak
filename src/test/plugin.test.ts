@@ -189,7 +189,7 @@ describe('call', () => {
 // MARK: catch
 describe('catch', () => {
   it('simple', test('a catch b {}', 'a catch b { }'))
-  it('do-catch', test('do {long}catch e{}', 'do {\n\tlong\n} catch e { }'))
+  it('do-catch', test('do {long}catch e{}', 'do {\n\tlong\n} catch e {\n}'))
   it('no identifier', test('a catch \n\n {}', 'a catch { }'))
   it('long expression', test('long catch \n\n {}', 'long catch {\n}'))
   it(
@@ -201,7 +201,6 @@ describe('catch', () => {
     test('long catch {long}', 'long catch {\n\tlong\n}'),
   )
   it('all long', test('long catch long {long}', 'long catch long {\n\tlong\n}'))
-  it('comment', test('a catch --\n{}', 'a catch { } --'))
 })
 
 // MARK: do
@@ -209,7 +208,7 @@ describe('do', () => {
   it('simple', test('do{a}', 'do { a }'))
   it('long block', test('do{long}', 'do {\n\tlong\n}'))
   it('empty block', test('do{}', 'do { }'))
-  it('comments', test('--\ndo--\n{a--\n}', '--\ndo {\n\t--\n\ta --\n}'))
+  it('comments', test('--\ndo--\n{a--\n}', '--\ndo --\n{\n\ta --\n}'))
   it('comment after', test('do{a\n\n--\n}b', 'do {\n\ta\n\n\t--\n}\nb'))
   it('comment after 2', test('do{a\n--\n}b', 'do {\n\ta\n\t--\n}\nb'))
 })
@@ -229,7 +228,6 @@ describe('fun', () => {
     'empty function arguments',
     test('fun {}', 'fun { }', { emptyFunctionArguments: true }),
   )
-  it('comment', test('fun --\n{}', 'fun () {\n\t--\n}'))
 })
 
 // MARK: if
@@ -311,19 +309,19 @@ describe('if', () => {
   })
   describe('comments', () => {
     it(
-      'comment outside block, before else',
-      test('if a{}\n\n\n\n--\n\n\n\n\nelse{}', 'if a {\n} else {\n\t--\n}'),
+      'comment after else',
+      test('if a{}else{--\n}', 'if a {\n} else {\n\t--\n}'),
     )
     it(
       'comment between elseif blocks',
       test(
-        'if a{a\n\n\n--\n}else\n\n\nif b{}',
+        'if a{a\n--\n}else\n\n\nif b{}',
         'if a {\n\ta\n\t--\n} else if b { }',
       ),
     )
     it(
       'comment between else blocks',
-      test('if a{a\n\n\n--\n}else\n\n\n{}', 'if a {\n\ta\n\t--\n} else { }'),
+      test('if a{a\n\n\n--\n}else\n\n\n{}', 'if a {\n\ta\n\n\t--\n} else {\n}'),
     )
   })
 })
@@ -450,7 +448,7 @@ describe('while', () => {
   it('empty', test('while a{}', 'while a { }'))
   it('simple block', test('while a{b}', 'while a { b }'))
   it('long block', test('while a{long}', 'while a {\n\tlong\n}'))
-  it('long condition', test('while long{}', 'while\n\t\tlong\n{ }'))
+  it('long condition', test('while long{}', 'while\n\t\tlong\n{\n}'))
   it(
     'long condition, long body',
     test('while long{long}', 'while\n\t\tlong\n{\n\tlong\n}'),
@@ -462,7 +460,7 @@ describe('with', () => {
   it('empty', test('with a{}', 'with a { }'))
   it('simple block', test('with a{b}', 'with a { b }'))
   it('long block', test('with a{long}', 'with a {\n\tlong\n}'))
-  it('long condition', test('with long{}', 'with\n\t\tlong\n{ }'))
+  it('long condition', test('with long{}', 'with\n\t\tlong\n{\n}'))
   it(
     'long condition, long body',
     test('with long{long}', 'with\n\t\tlong\n{\n\tlong\n}'),

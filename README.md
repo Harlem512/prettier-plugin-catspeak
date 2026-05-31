@@ -132,15 +132,6 @@ The repository consists of two parts, a Prettier plugin (living in `src/`) and t
 Formatting weirdness (to fix):
 
 ```sp
-if true {
-  a
-  -- comment at end of block
-} else if false {
-  b
-}
-```
-
-```sp
 {
   -- comment
   a,
