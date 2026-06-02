@@ -1,4 +1,4 @@
-import { format, Options } from 'prettier'
+import { format, Options, ParserOptions } from 'prettier'
 import * as CatspeakPlugin from '..'
 import { CatspeakOptions, CommaMode } from '../options'
 
@@ -55,19 +55,18 @@ function test(raw: string, formatted: string, options?: Options) {
 describe('group', () => {
   it('grouped in precedence', test('(a*c)+b', '(a * c) + b'))
   it('grouped out of precedence', test('a*(c+b)', 'a * (c + b)'))
-  it('long inside', test('(\n\tlong)', '(\n\t\tlong\n)'))
-  it(
-    'long inside, comment inside',
-    test('(\n--\nlong)', '(\n\t\t--\n\t\tlong\n)'),
-  )
+  it('long inside', test('(\n\tlong)', '(\n\tlong\n)'))
+  it('long inside, comment inside', test('(\n--\nlong)', '(\n\t--\n\tlong\n)'))
   it(
     'long inside, comment outside',
-    test('--\n(\n\t\tlong)', '--\n(\n\t\tlong\n)'),
+    test('--\n(\n\t\tlong)', '--\n(\n\tlong\n)'),
   )
 })
 
 // MARK: let
 describe('let statement', () => {
+  const o: Partial<ParserOptions> = { indentAssignment: true }
+
   it('simple', test('let a\n=\nb', 'let a = b'))
   it('no value', test('let\na', 'let a'))
   it('long identifier, no value', test('let\nlong', 'let long'))
@@ -76,11 +75,15 @@ describe('let statement', () => {
   it('double long', test('let \n\t\tlong=long', 'let long = long'))
   it(
     'assign from line break, with indent',
-    test('let a=do{long}', 'let a = do {\n\t\t\tlong\n\t\t}'),
+    test('let a=do{long}', 'let a = do {\n\t\t\tlong\n\t\t}', o),
   )
   it(
     'assign from line break, without indent',
-    test('let a=fun{long}', 'let a = fun () {\n\tlong\n}'),
+    test('let a=fun{long}', 'let a = fun () {\n\tlong\n}', o),
+  )
+  it(
+    'assign from long addition',
+    test('let a=long+long', 'let a = long +\n\t\tlong', o),
   )
 })
 
@@ -249,11 +252,16 @@ describe('fun', () => {
 describe('if', () => {
   describe('no else', () => {
     it('simple', test('if a{}', 'if a { }'))
-    it('long condition', test('if long{}', 'if\n\t\tlong\n{\n}'))
+    it('long condition', test('if long{}', 'if long {\n}'))
+    it(
+      'long condition, line wrap',
+      test('if (long){}', 'if (\n\t\tlong\n) {\n}'),
+    )
     it('long body', test('if a{long}', 'if a {\n\tlong\n}'))
+    it('long body and condition', test('if long{long}', 'if long {\n\tlong\n}'))
     it(
       'long body and condition',
-      test('if long{long}', 'if\n\t\tlong\n{\n\tlong\n}'),
+      test('if (long){long}', 'if (\n\t\tlong\n) {\n\tlong\n}'),
     )
   })
   describe('normal else', () => {
@@ -269,27 +277,21 @@ describe('if', () => {
       test('if a{long}else{long}', 'if a {\n\tlong\n} else {\n\tlong\n}'),
     )
     // 1 0 0
-    it(
-      'long condition',
-      test('if long{}else{}', 'if\n\t\tlong\n{\n} else {\n}'),
-    )
+    it('long condition', test('if long{}else{}', 'if long {\n} else {\n}'))
     // 1 0 1
     it(
       'long condition, long else',
-      test('if long{}else{long}', 'if\n\t\tlong\n{\n} else {\n\tlong\n}'),
+      test('if long{}else{long}', 'if long {\n} else {\n\tlong\n}'),
     )
     // 1 1 0
     it(
       'long condition, long else',
-      test('if long{long}else{}', 'if\n\t\tlong\n{\n\tlong\n} else {\n}'),
+      test('if long{long}else{}', 'if long {\n\tlong\n} else {\n}'),
     )
     // 1 1 1
     it(
       'all long',
-      test(
-        'if long{long}else{long}',
-        'if\n\t\tlong\n{\n\tlong\n} else {\n\tlong\n}',
-      ),
+      test('if long{long}else{long}', 'if long {\n\tlong\n} else {\n\tlong\n}'),
     )
   })
   describe('else if', () => {
@@ -311,14 +313,14 @@ describe('if', () => {
       'wrapped elseif condition',
       test(
         'if a{\t\nb}else if long{d}else{e}',
-        'if a {\n\tb\n} else if\n\t\tlong\n{\n\td\n} else {\n\te\n}',
+        'if a {\n\tb\n} else if long {\n\td\n} else {\n\te\n}',
       ),
     )
     it(
       'elseif stays on one line',
       test(
         'if a{\t\nlong}else if long{d}else{e}',
-        'if a {\n\tlong\n} else if\n\t\tlong\n{\n\td\n} else {\n\te\n}',
+        'if a {\n\tlong\n} else if long {\n\td\n} else {\n\te\n}',
       ),
     )
   })
@@ -364,7 +366,11 @@ describe('match', () => {
   )
   it(
     'long condition',
-    test('match long {case a{}}', 'match\n\t\tlong\n{\n\tcase a { }\n}'),
+    test('match long {case a{}}', 'match long {\n\tcase a { }\n}'),
+  )
+  it(
+    'long condition, wrap',
+    test('match(long){case a{}}', 'match (\n\tlong\n) {\n\tcase a { }\n}'),
   )
   it('empty', test('match a{}', 'match a { }'))
   describe('comments', () => {

@@ -24,6 +24,8 @@ export interface CatspeakOptions {
   wrapBinaryOperators: boolean
   /** if catch-throw expressions should be parsed */
   parseCatchThrow: boolean
+  /** if assignment should be indented */
+  indentAssignment: boolean
 }
 
 // adds catspeak options to the formatter
@@ -90,6 +92,13 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
     description:
       'If enabled, catch and throw expressions will be parsed and both keywords will be forbidden as identifiers.',
   },
+  indentAssignment: {
+    category: 'catspeak',
+    type: 'boolean',
+    default: false,
+    description:
+      'If enabled, assignment values that are a block statement (catch, do, if, match, while, with) will be indented.',
+  },
 }
 
 // MARK: Default Options
@@ -100,4 +109,5 @@ export const defaultOptions: CatspeakOptions = {
   emptyFunctionArguments: false,
   wrapBinaryOperators: false,
   parseCatchThrow: true,
+  indentAssignment: false,
 }

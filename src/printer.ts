@@ -203,18 +203,22 @@ function joinSemicolon<T extends AstNode>(
   )
 }
 
-function indentAssignment(node: AstNode) {
-  switch (node.type) {
-    case 'Catch':
-    case 'Do':
-    case 'If':
-    case 'Match':
-    case 'While':
-    case 'With':
-      return true
-    default:
-      return false
-  }
+const toIndent = new Set<NodeType>([
+  'Catch',
+  'Do',
+  'If',
+  'Match',
+  'While',
+  'With',
+])
+function indentAssignment(
+  node: AstNode,
+  doc: Doc,
+  options: ParserOptions<AstNode>,
+) {
+  return options.indentAssignment && toIndent.has(node.type)
+    ? indentExp(doc, options)
+    : doc
 }
 
 // MARK: PRINTERS
@@ -268,7 +272,7 @@ const nodePrinters: {
   Group(path, options, print) {
     return group([
       '(',
-      indentExp(group([softline, path.call(print, 'inside')]), options),
+      indent([softline, path.call(print, 'inside')]),
       softline,
       ')',
     ])
@@ -289,7 +293,7 @@ const nodePrinters: {
       'let ',
       path.call(print, 'identifier'),
       ' = ',
-      indentAssignment(path.node.value) ? indentExp(value, options) : value,
+      indentAssignment(path.node.value, value, options),
     ]
   },
   // MARK: a[b]
@@ -342,7 +346,7 @@ const nodePrinters: {
       ' ',
       path.node.operator,
       ' ',
-      indentAssignment(path.node.value) ? indentExp(value, options) : value,
+      indentAssignment(path.node.value, value, options),
     ]
   },
   // MARK: break
@@ -414,11 +418,9 @@ const nodePrinters: {
   // MARK: if
   If(path, options, print) {
     return group([
-      group([
-        'if',
-        indentExp([line, path.call(print, 'condition')], options),
-        line,
-      ]),
+      'if ',
+      path.call(print, 'condition'),
+      ' ',
       // if block
       path.call(print, 'ifBlock'),
       // else block
@@ -432,12 +434,9 @@ const nodePrinters: {
   // MARK: match
   Match(path, options, print) {
     return group([
-      group([
-        'match',
-        indentExp([line, path.call(print, 'condition')], options),
-        line,
-        '{',
-      ]),
+      'match ',
+      path.call(print, 'condition'),
+      ' {',
       joinWithComments(path, 'cases', print, options, line, () =>
         join(line, path.map(print, 'cases')),
       ),

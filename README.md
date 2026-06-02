@@ -23,29 +23,37 @@ Marketplace download coming when it's done.
 
 ### commaMode
 
-Changes how commas are handled. `normal` prints non-trailing commas, `trailing` prints a trailing comma on wrapped lines, `none` attempts to remove all commas except those required to remove expression ambiguity.
+Changes how commas are handled. `normal` prints non-trailing commas, `trailing` prints a trailing comma on wrapped lines, `none` attempts to remove all commas except those required to remove expression ambiguity. Default `trailing`.
 
 ```catspeak
--- Normal
+-- commaMode = "normal"
 [ a, b ]
 [
+  a,
+  [b],
   long
 ]
 
--- trailing
+-- commaMode = "trailing"
 [ a, b ]
 [
+  a,
+  [b],
   long,
 ]
 
--- none
+-- commaMode = "none"
 [ a b ]
-[ a, [b] ]
+[
+  a,
+  [b]
+  long
+]
 ```
 
 ### printSemicolons
 
-Changes how semicolons are handled. If enabled, each statement will be terminated with a semicolon.
+Changes how semicolons are handled. If enabled, each statement will be terminated with a semicolon. Default `false`.
 
 ```catspeak
 -- printSemicolons = false
@@ -59,7 +67,7 @@ let foo = bar;
 
 ### doubleIndent
 
-Determines if certain expressions should be double indented.
+Determines if certain expressions should be double indented. Default `false`.
 
 ```catspeak
 -- doubleIdent = true
@@ -79,7 +87,7 @@ if true {
 
 ### emptyFunctionArguments
 
-Determines if function declaration expressions with no arguments should have empty parenthesis.
+Determines if function declaration expressions with no arguments should have empty parenthesis. Default `false`.
 
 ```catspeak
 -- emptyFunctionArguments = true
@@ -91,7 +99,7 @@ let fn = fun () { }
 
 ### wrapBinaryOperators
 
-If enabled, wrapped binary operation expressions will place their operator on a newline before the second operand.
+If enabled, wrapped binary operation expressions will place their operator on a newline before the second operand. Default `false`.
 
 ```catspeak
 -- wrapBinaryOperators = true
@@ -105,16 +113,33 @@ x = foo +
 
 ### parseCatchThrow
 
-Version 3.2.0 of Catspeak introduces the `throw` and `catch` expressions and their keywords.
+Version 3.2.0 of Catspeak introduces the `throw` and `catch` expressions and their keywords. When enabled, these keywords will be parsed as keywords instead of identifiers. Default `true`.
 
 ```catspeak
 -- parseCatchThrow = true
-let throw -- errors
-throw "hello" -- formatted as an expression
+let throw; -- errors
+throw "hello"; -- formatted as an expression
 
 -- parseCatchThrow = false
-let throw -- no error
-throw "hello" -- formatted as two no-op expressions
+let throw; -- no error
+throw; -- formatted as a identifier and a string
+"hello";
+```
+
+### indentAssignment
+
+If enabled, assignment values that are a block statement (catch, do, if, match, while, with) will be indented. Default `false`.
+
+```catspeak
+-- indentAssignment = false
+let x = do {
+  long
+}
+
+-- indentAssignment = true
+let x = do {
+      long
+    }
 ```
 
 ## Developers
@@ -129,14 +154,24 @@ The repository consists of two parts, a Prettier plugin (living in `src/`) and t
 
 - New-line before statements to force wrapping (?)
 
+Re-evaluate wrapped stuff:
+
+```catspeak
+-- group expression should stay on the same line
+while (
+  long
+) {
+  --
+}
+```
+
 Formatting weirdness (to fix):
 
-```sp
+```catspeak
 {
-  -- comment
-  a,
+  a, -- significant trailing comment
 
-  -- line above comment disappears
+  -- newline above is erased
   b,
 }
 ```

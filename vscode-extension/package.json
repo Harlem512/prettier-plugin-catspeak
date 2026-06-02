@@ -124,6 +124,11 @@
           "description": "If enabled, catch and throw expressions will be parsed and both keywords will be forbidden as identifiers.",
           "type": "boolean",
           "default": true
+        },
+        "prettier.catspeak.indentAssignment": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, assignment values that are a block statement (catch, do, if, match, while, with) will be indented."
         }
       }
     }
