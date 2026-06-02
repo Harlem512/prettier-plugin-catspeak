@@ -59,26 +59,6 @@ let foo = bar;
 (baz);
 ```
 
-### doubleIndent
-
-Determines if certain expressions should be double indented. Default `false`.
-
-```catspeak
--- doubleIdent = true
-if true {
-  a[
-      "some really long key"
-  ]
-}
-
--- doubleIdent = false
-if true {
-  a[
-    "some really long key"
-  ]
-}
-```
-
 ### emptyFunctionArguments
 
 Determines if function declaration expressions with no arguments should have empty parenthesis. Default `false`.

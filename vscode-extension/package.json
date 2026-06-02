@@ -3,7 +3,7 @@
   "displayName": "Prettier Formatter: Catspeak",
   "description": "A code formatter (and syntax highlighter) for Catspeak built with Prettier",
   "publisher": "Harlem512",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.120.0"
   },
@@ -99,11 +99,6 @@
             "Print trailing commas when the statement wraps to a new line. `fn(a, [b, ], c, )`"
           ],
           "default": "trailing"
-        },
-        "prettier.catspeak.doubleIndent": {
-          "description": "Enable/disable double indenting some wrapped expression blocks, such as if conditions, accessors, and function calls.",
-          "type": "boolean",
-          "default": false
         },
         "prettier.catspeak.printSemicolons": {
           "description": "If enabled, each statement will be terminated with a semicolon.",

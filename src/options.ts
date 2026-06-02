@@ -16,8 +16,6 @@ export interface CatspeakOptions {
   commaMode: CommaMode
   /** print all semicolons */
   printSemicolons: boolean
-  /** double indent inside of some blocks */
-  doubleIndent: boolean
   /** if functions with no arguments should drop ( ) */
   emptyFunctionArguments: boolean
   /** if operators should be wrapped with their second expression */
@@ -56,13 +54,6 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
           'Print trailing commas when the statement wraps to a new line. `fn(a, [b, ], c, )`',
       },
     ],
-  },
-  doubleIndent: {
-    category: 'catspeak',
-    type: 'boolean',
-    default: false,
-    description:
-      'Enable/disable double indenting some wrapped expression blocks, such as if conditions, accessors, and function calls.',
   },
   printSemicolons: {
     category: 'catspeak',
@@ -104,7 +95,6 @@ export const options: Record<keyof CatspeakOptions, SupportOption> = {
 // MARK: Default Options
 export const defaultOptions: CatspeakOptions = {
   commaMode: CommaMode.TRAILING,
-  doubleIndent: false,
   printSemicolons: false,
   emptyFunctionArguments: false,
   wrapBinaryOperators: false,

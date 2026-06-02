@@ -105,6 +105,9 @@ const SINGLE_CHAR_OPERATORS = new Set([
 
 const PUNCTUATION = new Set(['(', ')', '[', ']', '{', '}', ',', ';', '.', ':'])
 
+const WHITESPACE_NOT_LINE = new Set([' ', '\r', '\v', '\t'])
+const WHITESPACE = new Set([' ', '\r', '\n', '\v', '\t'])
+
 export function tokenize(source: string, options?: LexerOptions): Token[] {
   const keywords =
     (options?.enableCatchThrow ?? true)
@@ -161,7 +164,7 @@ export function tokenize(source: string, options?: LexerOptions): Token[] {
     const ch = current()
 
     // MARK: whitespace
-    if (ch === ' ' || ch === '\t' || ch === '\r') {
+    if (WHITESPACE_NOT_LINE.has(ch)) {
       advance()
       continue
     }
@@ -233,7 +236,10 @@ export function tokenize(source: string, options?: LexerOptions): Token[] {
     // MARK: `1_var`
     if (ch === '`') {
       let value = advance() // start with opening `
-      value += advanceMatching((current) => current !== '`' && current !== '\n')
+      // consume all non-whitespace, non-backtick characters
+      value += advanceMatching(
+        (current) => current !== '`' && !WHITESPACE.has(current),
+      )
       if (current() === '`') {
         value += advance() // closing `
       }

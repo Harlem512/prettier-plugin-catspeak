@@ -7,20 +7,6 @@ import { IterProperties, RNull } from './types.js'
 // builder utilities
 const { group, indent, join, line, softline, hardline, ifBreak } = builders
 
-/**
- * Indents this block twice if it wraps
- * ```
- * if (
- *     some_long_condition
- * ) {
- *   ...
- * }
- * ```
- */
-function indentExp(doc: Doc, options: ParserOptions<AstNode>): Doc {
-  return options.doubleIndent ? indent(indent(doc)) : indent(doc)
-}
-
 // MARK: separator
 /**
  * Returns true if these nodes require a separator to disambiguate some statements.
@@ -216,9 +202,7 @@ function indentAssignment(
   doc: Doc,
   options: ParserOptions<AstNode>,
 ) {
-  return options.indentAssignment && toIndent.has(node.type)
-    ? indentExp(doc, options)
-    : doc
+  return options.indentAssignment && toIndent.has(node.type) ? indent(doc) : doc
 }
 
 // MARK: PRINTERS
@@ -302,7 +286,7 @@ const nodePrinters: {
       // a.b
       return group([
         path.call(print, 'collection'),
-        indentExp([softline, '.', path.call(print, 'key')], options),
+        indent([softline, '.', path.call(print, 'key')]),
       ])
     } else {
       // a[b]
@@ -310,7 +294,7 @@ const nodePrinters: {
         path.call(print, 'collection'),
         group([
           '[',
-          indentExp([softline, path.call(print, 'key')], options),
+          indent([softline, path.call(print, 'key')]),
           softline,
           ']',
         ]),
@@ -352,7 +336,7 @@ const nodePrinters: {
   // MARK: break
   Break(path, options, print) {
     return path.node.value
-      ? group(['break', indent([line, path.call(print, 'value')])])
+      ? group(['break ', path.call(print, 'value')])
       : 'break'
   },
   // MARK: fn()
@@ -363,10 +347,7 @@ const nodePrinters: {
       '(',
       path.node.arguments && path.node.arguments.length > 0
         ? [
-            indentExp(
-              [softline, joinComma(path, 'arguments', print, options)],
-              options,
-            ),
+            indent([softline, joinComma(path, 'arguments', print, options)]),
             softline,
           ]
         : '',
@@ -377,9 +358,8 @@ const nodePrinters: {
   Catch(path, options, print) {
     return group([
       group([path.call(print, 'expression')]),
-      ' catch',
-      path.node.identifier ? [' ', path.call(print, 'identifier')] : '',
-      ' ',
+      ' catch ',
+      path.node.identifier ? [path.call(print, 'identifier'), ' '] : '',
       path.call(print, 'block'),
     ])
   },
@@ -397,19 +377,14 @@ const nodePrinters: {
     const args =
       options.emptyFunctionArguments && path.node.arguments.length === 0
         ? 'fun '
-        : [
+        : group([
             'fun (',
-            group(
-              indentExp(
-                [softline, joinComma(path, 'arguments', print, options)],
-                options,
-              ),
-            ),
+            indent([softline, joinComma(path, 'arguments', print, options)]),
             softline,
             ') ',
-          ]
+          ])
 
-    return group([group(args), path.call(print, 'block')])
+    return group([args, path.call(print, 'block')])
   },
   // MARK: foo
   Identifier(path) {
@@ -420,7 +395,7 @@ const nodePrinters: {
     return group([
       'if ',
       path.call(print, 'condition'),
-      ' ',
+      ' ', // space after if condition before opening brace
       // if block
       path.call(print, 'ifBlock'),
       // else block
@@ -463,24 +438,21 @@ const nodePrinters: {
     if (options.wrapBinaryOperators) {
       return group([
         path.call(print, 'left'),
-        indentExp(
-          [line, path.node.operation, ' ', path.call(print, 'right')],
-          options,
-        ),
+        indent([line, path.node.operation, ' ', path.call(print, 'right')]),
       ])
     } else {
       return group([
         path.call(print, 'left'),
         ' ',
         path.node.operation,
-        indentExp([line, path.call(print, 'right')], options),
+        indent([line, path.call(print, 'right')]),
       ])
     }
   },
   // MARK: return
   Return(path, options, print) {
     return path.node.value
-      ? group(['return', indent([line, path.call(print, 'value')])])
+      ? group(['return ', path.call(print, 'value')])
       : 'return'
   },
   // MARK: "string"
@@ -511,7 +483,7 @@ const nodePrinters: {
 
     // non-identifiers require [brackets]
     if (!path.node.isIdentifier) {
-      key = ['[', indentExp([softline, key], options), softline, ']']
+      key = ['[', indent([softline, key]), softline, ']']
     }
 
     // key only
@@ -523,7 +495,7 @@ const nodePrinters: {
   // MARK: throw
   Throw(path, options, print) {
     return path.node.value
-      ? group(['throw', indent([line, path.call(print, 'value')])])
+      ? group(['throw ', path.call(print, 'value')])
       : 'throw'
   },
   // MARK: !a
@@ -533,22 +505,14 @@ const nodePrinters: {
   // MARK: while
   While(path, options, print) {
     return group([
-      group([
-        'while',
-        indentExp([line, path.call(print, 'condition')], options),
-        line,
-      ]),
+      group(['while ', path.call(print, 'condition'), ' ']),
       path.call(print, 'block'),
     ])
   },
   // MARK: with
   With(path, options, print) {
     return group([
-      group([
-        'with',
-        indentExp([line, path.call(print, 'condition')], options),
-        line,
-      ]),
+      group(['with ', path.call(print, 'condition'), ' ']),
       path.call(print, 'block'),
     ])
   },

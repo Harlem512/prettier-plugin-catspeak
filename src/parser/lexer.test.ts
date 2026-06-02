@@ -200,9 +200,9 @@ describe('Lexer', () => {
   })
 
   it('tokenizes backtick identifiers', () => {
-    expect(tokTypes('`1raw ident`')).toEqual(['Identifier:`1raw ident`'])
+    expect(tokTypes('`1raw_ident`')).toEqual(['Identifier:`1raw_ident`'])
   })
-  it('tokenizes backtick identifiers with newlines', () => {
+  it('tokenizes backtick identifiers with whitespace', () => {
     expect(tokTypes('`1raw\nident`')).toEqual([
       'Identifier:`1raw',
       'Identifier:ident',

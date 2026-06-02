@@ -65,26 +65,6 @@ let foo = bar;
 (baz);
 ```
 
-### doubleIndent
-
-Determines if certain expressions should be double indented. Default `false`.
-
-```catspeak
--- doubleIdent = true
-if true {
-  a[
-      "some really long key"
-  ]
-}
-
--- doubleIdent = false
-if true {
-  a[
-    "some really long key"
-  ]
-}
-```
-
 ### emptyFunctionArguments
 
 Determines if function declaration expressions with no arguments should have empty parenthesis. Default `false`.
@@ -154,18 +134,21 @@ The repository consists of two parts, a Prettier plugin (living in `src/`) and t
 
 - New-line before statements to force wrapping (?)
 
-Re-evaluate wrapped stuff:
+Formatting weirdness (to fix):
 
 ```catspeak
--- group expression should stay on the same line
-while (
+if long
+    and long {
+  ...
+}
+
+if (
   long
+    and long
 ) {
-  --
+  ...
 }
 ```
-
-Formatting weirdness (to fix):
 
 ```catspeak
 {

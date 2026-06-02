@@ -8,7 +8,6 @@ const long =
 
 function test(raw: string, formatted: string, options?: Options) {
   const opts = {
-    doubleIndent: true,
     ...options,
     plugins: [CatspeakPlugin],
     parser: 'catspeak',
@@ -75,7 +74,7 @@ describe('let statement', () => {
   it('double long', test('let \n\t\tlong=long', 'let long = long'))
   it(
     'assign from line break, with indent',
-    test('let a=do{long}', 'let a = do {\n\t\t\tlong\n\t\t}', o),
+    test('let a=do{long}', 'let a = do {\n\t\tlong\n\t}', o),
   )
   it(
     'assign from line break, without indent',
@@ -83,7 +82,7 @@ describe('let statement', () => {
   )
   it(
     'assign from long addition',
-    test('let a=long+long', 'let a = long +\n\t\tlong', o),
+    test('let a=long+long', 'let a = long +\n\tlong', o),
   )
 })
 
@@ -114,15 +113,15 @@ describe('root statement', () => {
 describe('accessor', () => {
   describe('bracket', () => {
     it('simple', test('a         [\nb\n]', 'a[b]'))
-    it('long key', test('a   [\nlong]', 'a[\n\t\tlong\n]'))
-    it('long array', test('long   [\na]', 'long[\n\t\ta\n]'))
-    it('long array and key', test('long   [\nlong]', 'long[\n\t\tlong\n]'))
+    it('long key', test('a   [\nlong]', 'a[\n\tlong\n]'))
+    it('long array', test('long   [\na]', 'long[\n\ta\n]'))
+    it('long array and key', test('long   [\nlong]', 'long[\n\tlong\n]'))
   })
   describe('dot', () => {
     it('simple', test('a         .\nb\n', 'a.b'))
-    it('long key', test('a.   \nlong', 'a\n\t\t.long'))
-    it('long array', test('long   .\na', 'long\n\t\t.a'))
-    it('long array and key', test('long   .\nlong', 'long\n\t\t.long'))
+    it('long key', test('a.   \nlong', 'a\n\t.long'))
+    it('long array', test('long   .\na', 'long\n\t.a'))
+    it('long array and key', test('long   .\nlong', 'long\n\t.long'))
   })
 })
 
@@ -190,14 +189,15 @@ describe('assignment', () => {
 describe('break', () => {
   it('normal', test('\t\t\tbreak\na', 'break a'))
   it('no expression', test('\t\t\tbreak\n', 'break'))
-  it('long', test('\t\t\tbreak long', 'break\n\tlong'))
+  it('long', test('\t\t\tbreak long', 'break long'))
+  it('long exp', test('\t\t\tbreak (long)', 'break (\n\tlong\n)'))
 })
 
 // MARK: call
 describe('call', () => {
   it('simple', test('f(a,b)', 'f(a, b)'))
-  it('long name', test('long   (a,b)', 'long(\n\t\ta,\n\t\tb,\n)'))
-  it('long arguments', test('a   (a,long)', 'a(\n\t\ta,\n\t\tlong,\n)'))
+  it('long name', test('long   (a,b)', 'long(\n\ta,\n\tb,\n)'))
+  it('long arguments', test('a   (a,long)', 'a(\n\ta,\n\tlong,\n)'))
   it('no arguments', test('a\n(\n)', 'a()'))
   it('long name, no arguments', test('long\n(\n)', 'long()'))
   it('long name, new, no arguments', test('new long\n(\n)', 'new long()'))
@@ -235,10 +235,10 @@ describe('do', () => {
 describe('fun', () => {
   it('simple', test('fun(a,b) {c}', 'fun (a, b) { c }'))
   it('long block', test('fun(a,b) {long}', 'fun (a, b) {\n\tlong\n}'))
-  it('long args', test('fun(long) {a}', 'fun (\n\t\tlong,\n) {\n\ta\n}'))
+  it('long args', test('fun(long) {a}', 'fun (\n\tlong,\n) {\n\ta\n}'))
   it(
     'long args and long block',
-    test('fun(long) {long}', 'fun (\n\t\tlong,\n) {\n\tlong\n}'),
+    test('fun(long) {long}', 'fun (\n\tlong,\n) {\n\tlong\n}'),
   )
   it('empty function block', test('fun{}', 'fun () { }'))
   // options
@@ -253,15 +253,12 @@ describe('if', () => {
   describe('no else', () => {
     it('simple', test('if a{}', 'if a { }'))
     it('long condition', test('if long{}', 'if long {\n}'))
-    it(
-      'long condition, line wrap',
-      test('if (long){}', 'if (\n\t\tlong\n) {\n}'),
-    )
+    it('long condition, line wrap', test('if (long){}', 'if (\n\tlong\n) {\n}'))
     it('long body', test('if a{long}', 'if a {\n\tlong\n}'))
     it('long body and condition', test('if long{long}', 'if long {\n\tlong\n}'))
     it(
       'long body and condition',
-      test('if (long){long}', 'if (\n\t\tlong\n) {\n\tlong\n}'),
+      test('if (long){long}', 'if (\n\tlong\n) {\n\tlong\n}'),
     )
   })
   describe('normal else', () => {
@@ -396,28 +393,28 @@ describe('operator', () => {
 
   describe('wrap operator', () => {
     const o: Partial<CatspeakOptions> = { wrapBinaryOperators: true }
-    it('a + long', test('a+long', 'a\n\t\t+ long', o))
-    it('long + b', test('long+b', 'long\n\t\t+ b', o))
-    it('long + long', test('long+long', 'long\n\t\t+ long', o))
+    it('a + long', test('a+long', 'a\n\t+ long', o))
+    it('long + b', test('long+b', 'long\n\t+ b', o))
+    it('long + long', test('long+long', 'long\n\t+ long', o))
     it(
       'many wrapped operators',
       test(
         'long+long-long*long/long-long',
-        'long\n\t\t+ long\n\t\t- long\n\t\t\t\t* long\n\t\t\t\t/ long\n\t\t- long',
+        'long\n\t+ long\n\t- long\n\t\t* long\n\t\t/ long\n\t- long',
         o,
       ),
     )
   })
 
   describe("don't wrap operator", () => {
-    it('a + long', test('a+long', 'a +\n\t\tlong'))
-    it('long + b', test('long+b', 'long +\n\t\tb'))
-    it('long + long', test('long+long', 'long +\n\t\tlong'))
+    it('a + long', test('a+long', 'a +\n\tlong'))
+    it('long + b', test('long+b', 'long +\n\tb'))
+    it('long + long', test('long+long', 'long +\n\tlong'))
     it(
       'many wrapped operators',
       test(
         'long+long-long*long/long-long',
-        'long +\n\t\tlong -\n\t\tlong *\n\t\t\t\tlong /\n\t\t\t\tlong -\n\t\tlong',
+        'long +\n\tlong -\n\tlong *\n\t\tlong /\n\t\tlong -\n\tlong',
       ),
     )
   })
@@ -427,7 +424,8 @@ describe('operator', () => {
 describe('return', () => {
   it('normal', test('\t\treturn\na', 'return a'))
   it('no expression', test('\t\treturn\n', 'return'))
-  it('long', test('\t\treturn long', 'return\n\tlong'))
+  it('long', test('\t\treturn long', 'return long'))
+  it('long exp', test('\t\treturn(long)', 'return (\n\tlong\n)'))
 })
 
 // MARK: struct literal
@@ -442,7 +440,7 @@ describe('struct literal', () => {
   it('identifier expression key', test('{[a]:b}', '{ [a]: b }'))
   it(
     "long value doesn't wrap",
-    test('{[a]:long}', '{\n\t[\n\t\t\ta\n\t]: long,\n}'),
+    test('{[a]:long}', '{\n\t[\n\t\ta\n\t]: long,\n}'),
   )
   it(
     "long value doesn't wrap, array",
@@ -450,7 +448,7 @@ describe('struct literal', () => {
   )
   it(
     'long expression key',
-    test('{[long()]:b}', '{\n\t[\n\t\t\tlong()\n\t]: b,\n}'),
+    test('{[long()]:b}', '{\n\t[\n\t\tlong()\n\t]: b,\n}'),
   )
   // comma between keys
   it(
@@ -474,7 +472,8 @@ describe('struct literal', () => {
 
 describe('throw', () => {
   it('normal', test('throw a', 'throw a'))
-  it('long throw', test('throw long', 'throw\n\tlong'))
+  it('long', test('throw long', 'throw long'))
+  it('long exp', test('throw (long)', 'throw (\n\tlong\n)'))
 })
 
 // MARK: unary
@@ -488,10 +487,15 @@ describe('while', () => {
   it('empty', test('while a{}', 'while a { }'))
   it('simple block', test('while a{b}', 'while a { b }'))
   it('long block', test('while a{long}', 'while a {\n\tlong\n}'))
-  it('long condition', test('while long{}', 'while\n\t\tlong\n{\n}'))
+  it('long condition', test('while long{}', 'while long {\n}'))
+  it('long exp condition', test('while(long){}', 'while (\n\tlong\n) {\n}'))
   it(
     'long condition, long body',
-    test('while long{long}', 'while\n\t\tlong\n{\n\tlong\n}'),
+    test('while long{long}', 'while long {\n\tlong\n}'),
+  )
+  it(
+    'long exp condition, long body',
+    test('while (long){long}', 'while (\n\tlong\n) {\n\tlong\n}'),
   )
 })
 
@@ -500,10 +504,15 @@ describe('with', () => {
   it('empty', test('with a{}', 'with a { }'))
   it('simple block', test('with a{b}', 'with a { b }'))
   it('long block', test('with a{long}', 'with a {\n\tlong\n}'))
-  it('long condition', test('with long{}', 'with\n\t\tlong\n{\n}'))
+  it('long condition', test('with long{}', 'with long {\n}'))
+  it('long exp condition', test('with(long){}', 'with (\n\tlong\n) {\n}'))
   it(
     'long condition, long body',
-    test('with long{long}', 'with\n\t\tlong\n{\n\tlong\n}'),
+    test('with long{long}', 'with long {\n\tlong\n}'),
+  )
+  it(
+    'long exp condition, long body',
+    test('with (long){long}', 'with (\n\tlong\n) {\n\tlong\n}'),
   )
 })
 
