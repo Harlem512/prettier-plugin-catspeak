@@ -257,8 +257,12 @@ describe('if', () => {
     it('long body', test('if a{long}', 'if a {\n\tlong\n}'))
     it('long body and condition', test('if long{long}', 'if long {\n\tlong\n}'))
     it(
-      'long body and condition',
+      'long exp body and condition',
       test('if (long){long}', 'if (\n\tlong\n) {\n\tlong\n}'),
+    )
+    it(
+      'long wrapped condition',
+      test('if long and long{}', 'if long and\n\t\tlong {\n}'),
     )
   })
   describe('normal else', () => {
@@ -368,6 +372,31 @@ describe('match', () => {
   it(
     'long condition, wrap',
     test('match(long){case a{}}', 'match (\n\tlong\n) {\n\tcase a { }\n}'),
+  )
+  it(
+    'long exp condition',
+    test(
+      'match long and long{case a{}}',
+      'match long and\n\t\tlong {\n\tcase a { }\n}',
+    ),
+  )
+  it(
+    'long case',
+    test('match a{case long{}}', 'match a {\n\tcase long {\n\t}\n}'),
+  )
+  it(
+    'long group case',
+    test(
+      'match a{case(long){}}',
+      'match a {\n\tcase (\n\t\tlong\n\t) {\n\t}\n}',
+    ),
+  )
+  it(
+    'long exp case',
+    test(
+      'match a{case long+long{}}',
+      'match a {\n\tcase long +\n\t\t\tlong {\n\t}\n}',
+    ),
   )
   it('empty', test('match a{}', 'match a { }'))
   describe('comments', () => {
@@ -497,6 +526,10 @@ describe('while', () => {
     'long exp condition, long body',
     test('while (long){long}', 'while (\n\tlong\n) {\n\tlong\n}'),
   )
+  it(
+    'long add condition',
+    test('while long+long{}', 'while long +\n\t\tlong {\n}'),
+  )
 })
 
 // MARK: with
@@ -513,6 +546,10 @@ describe('with', () => {
   it(
     'long exp condition, long body',
     test('with (long){long}', 'with (\n\tlong\n) {\n\tlong\n}'),
+  )
+  it(
+    'long add condition',
+    test('with long+long{}', 'with long +\n\t\tlong {\n}'),
   )
 })
 

@@ -118,8 +118,8 @@ let x = do {
 
 -- indentAssignment = true
 let x = do {
-      long
-    }
+    long
+  }
 ```
 
 ## Developers
@@ -135,20 +135,6 @@ The repository consists of two parts, a Prettier plugin (living in `src/`) and t
 - New-line before statements to force wrapping (?)
 
 Formatting weirdness (to fix):
-
-```catspeak
-if long
-    and long {
-  ...
-}
-
-if (
-  long
-    and long
-) {
-  ...
-}
-```
 
 ```catspeak
 {

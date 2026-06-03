@@ -189,6 +189,10 @@ function joinSemicolon<T extends AstNode>(
   )
 }
 
+function indentCondition(node: AstNode, doc: Doc) {
+  return node.type === 'Group' ? doc : indent(doc)
+}
+
 const toIndent = new Set<NodeType>([
   'Catch',
   'Do',
@@ -394,7 +398,8 @@ const nodePrinters: {
   If(path, options, print) {
     return group([
       'if ',
-      path.call(print, 'condition'),
+      // indent non-group nodes
+      indentCondition(path.node.condition, path.call(print, 'condition')),
       ' ', // space after if condition before opening brace
       // if block
       path.call(print, 'ifBlock'),
@@ -410,7 +415,8 @@ const nodePrinters: {
   Match(path, options, print) {
     return group([
       'match ',
-      path.call(print, 'condition'),
+      // indent non-group nodes
+      indentCondition(path.node.condition, path.call(print, 'condition')),
       ' {',
       joinWithComments(path, 'cases', print, options, line, () =>
         join(line, path.map(print, 'cases')),
@@ -423,7 +429,11 @@ const nodePrinters: {
   MatchCase(path, options, print) {
     // either `case X` or `else`
     const caseDoc = path.node.case
-      ? group(['case', line, path.call(print, 'case'), line])
+      ? [
+          'case ',
+          indentCondition(path.node.case, path.call(print, 'case')),
+          ' ',
+        ]
       : ['else ']
 
     // print body of the case/else
@@ -505,14 +515,18 @@ const nodePrinters: {
   // MARK: while
   While(path, options, print) {
     return group([
-      group(['while ', path.call(print, 'condition'), ' ']),
+      'while ',
+      indentCondition(path.node.condition, path.call(print, 'condition')),
+      ' ',
       path.call(print, 'block'),
     ])
   },
   // MARK: with
   With(path, options, print) {
     return group([
-      group(['with ', path.call(print, 'condition'), ' ']),
+      'with ',
+      indentCondition(path.node.condition, path.call(print, 'condition')),
+      ' ',
       path.call(print, 'block'),
     ])
   },
