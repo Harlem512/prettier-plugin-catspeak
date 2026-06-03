@@ -496,6 +496,11 @@ describe('struct literal', () => {
       'newline between commented entries',
       test('{--\na\n\n\n\n--\na}', '{\n\t--\n\ta,\n\n\t--\n\ta,\n}'),
     )
+    it('trailing comment', test('{a--\n\nb}', '{\n\ta, --\n\n\tb,\n}'))
+    it(
+      'trailing and leading comment',
+      test('{a--\n\n--\nb}', '{\n\ta, --\n\n\t--\n\tb,\n}'),
+    )
   })
 })
 
@@ -597,6 +602,10 @@ describe('comments', () => {
   describe('trailing tests', () => {
     it('simple', test('--\na--\nb', '--\na --\nb'))
     it('with space between', test('--\na--\n\nb', '--\na --\n\nb'))
+    it(
+      'with space between with comment',
+      test('--\na--\n\n--\nb', '--\na --\n\n--\nb'),
+    )
   })
 })
 
