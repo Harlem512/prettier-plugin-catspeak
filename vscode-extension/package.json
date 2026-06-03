@@ -1,6 +1,6 @@
 {
-  "name": "prettier-catspeak",
-  "displayName": "Prettier Formatter: Catspeak",
+  "name": "h512-prettier-catspeak",
+  "displayName": "A Prettier Formatter for Catspeak",
   "description": "A code formatter (and syntax highlighter) for Catspeak built with Prettier",
   "publisher": "Harlem512",
   "version": "0.3.0",
