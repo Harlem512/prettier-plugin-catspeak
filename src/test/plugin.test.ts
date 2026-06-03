@@ -594,6 +594,10 @@ describe('comments', () => {
     'comment inside single item block',
     test('do{--a\na}', 'do {\n\t--a\n\ta\n}'),
   )
+  describe('trailing tests', () => {
+    it('simple', test('--\na--\nb', '--\na --\nb'))
+    it('with space between', test('--\na--\n\nb', '--\na --\n\nb'))
+  })
 })
 
 // MARK: newlines

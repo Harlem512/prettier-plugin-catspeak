@@ -2,7 +2,7 @@
 
 > Once men turned their thinking over to machines in the hope that this would set them free. But that only permitted other men with machines to enslave them.
 
-An unofficial Prettier plugin for formatting Catspeak's `.meow` files and providing syntax highlighting. Still a work in-progress.
+An unofficial Prettier plugin for formatting Catspeak's `.meow` files and providing syntax highlighting.
 
 ## Features
 
@@ -129,21 +129,6 @@ The repository consists of two parts, a Prettier plugin (living in `src/`) and t
 - `npm test` in the root directory runs Jest with all test cases.
 - To test the extension, use VSCode's F5 Run Extension shortcut. This builds the plugin and extension, then opens a VSCode window.
 - `npm run extension-package` bundles the extension into a `.vsix` file placed in `/vscode-extension/dist`
-
-## TODO
-
-- New-line before statements to force wrapping (?)
-
-Formatting weirdness (to fix):
-
-```catspeak
-{
-  a, -- significant trailing comment
-
-  -- newline above is erased
-  b,
-}
-```
 
 ## "Reference Material"
 

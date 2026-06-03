@@ -119,7 +119,16 @@ export function parse(
         continue
       }
 
-      // not a new line...
+      // (handles trailing comments, ignore the first comment)
+      if (tokenIndex === lastTokenPos + 1) {
+        if (type === 'Comment') {
+          // increment newlines since the trailing comment has a newline
+          sequentialNewLines += 1
+          continue
+        }
+      }
+
+      // ... not a new line...
       if (sequentialNewLines > 1 && firstNewline) {
         // build the newline node
         return {
@@ -201,8 +210,8 @@ export function parse(
   }
 
   // MARK: block
-  function parseBlock(): AstNode[] {
-    expect('Punctuation', '{')
+  function parseBlock(): BlockNode {
+    const start = expect('Punctuation', '{')
     advance()
 
     const nodes: AstNode[] = []
@@ -220,13 +229,9 @@ export function parse(
     expect('Punctuation', '}')
     advance()
 
-    return nodes
-  }
-  function parseBlock2(): BlockNode {
-    const start = current()
     return {
       type: 'Block',
-      children: parseBlock(),
+      children: nodes,
       range: getRange(start),
     }
   }
@@ -372,7 +377,7 @@ export function parse(
         type: 'Catch',
         identifier,
         expression: result,
-        block: parseBlock2(),
+        block: parseBlock(),
         range: getRange(result),
       }
     }
@@ -386,14 +391,14 @@ export function parse(
 
       return {
         type: 'Do',
-        block: parseBlock2(),
+        block: parseBlock(),
         range: getRange(peeked),
       }
     } else if (is('Keyword', 'if', peeked)) {
       // MARK: if
       advance() // consume if
       const condition = parseCondition()
-      const ifBlock = parseBlock2()
+      const ifBlock = parseBlock()
 
       let elseBlock: IfNode['elseBlock'] = null
       let elseIfExpression: IfNode['elseIfExpression'] = null
@@ -405,7 +410,7 @@ export function parse(
           // MARK: else if
           elseIfExpression = parseExpression()
         } else {
-          elseBlock = parseBlock2()
+          elseBlock = parseBlock()
         }
       }
 
@@ -428,7 +433,7 @@ export function parse(
       return {
         type: peeked.value === 'while' ? 'While' : 'With',
         condition,
-        block: parseBlock2(),
+        block: parseBlock(),
         range: getRange(peeked),
       }
     } else if (is('Keyword', 'match', peeked)) {
@@ -460,7 +465,7 @@ export function parse(
         appendNodeArray(cases, {
           type: 'MatchCase',
           case: caseExp,
-          block: parseBlock2(),
+          block: parseBlock(),
           range: getRange(tok),
         })
       }
@@ -504,7 +509,7 @@ export function parse(
       return {
         type: 'Function',
         arguments: args,
-        block: parseBlock2(),
+        block: parseBlock(),
         range: getRange(peeked),
       }
     } else {
