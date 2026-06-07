@@ -2,7 +2,7 @@
 
 > Once men turned their thinking over to machines in the hope that this would set them free. But that only permitted other men with machines to enslave them.
 
-An unofficial Prettier plugin for formatting Catspeak's `.meow` files and providing syntax highlighting.
+An unofficial Prettier plugin for formatting Catspeak's `.meow` files. Also includes a VSCode extension (for syntax highlighting).
 
 ## Features
 
@@ -15,9 +15,7 @@ An unofficial Prettier plugin for formatting Catspeak's `.meow` files and provid
 
 ## To Install
 
-Download a [release](https://github.com/Harlem512/prettier-plugin-catspeak/releases) and run the `Extensions: Install from VSIX...` command palette option to install it.
-
-Marketplace download coming when it's done.
+The VSCode extension is available on the [marketplace](https://marketplace.visualstudio.com/items?itemName=Harlem512.h512-prettier-catspeak). Alternatively, download a [release](https://github.com/Harlem512/prettier-plugin-catspeak/releases) and run the `Extensions: Install from VSIX...` command palette option to install it.
 
 ## Options
 

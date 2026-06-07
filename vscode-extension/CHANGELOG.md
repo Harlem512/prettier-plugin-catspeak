@@ -5,3 +5,8 @@ All notable changes to the "prettier-catspeak" extension will be documented in t
 ## [0.1.0]
 
 - Initial release
+
+## [0.4.0]
+
+- Improved README grammar.
+- Added icons for the marketplace and `.meow` files.

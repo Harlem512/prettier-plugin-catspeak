@@ -1005,7 +1005,6 @@ export function parse(
       type: 'Root',
       block: nodes,
       comments,
-      isRoot: true,
       range: {
         start: { character: 0, line: 0, offset: 0 },
         end: current().range.end,

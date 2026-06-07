@@ -12,10 +12,10 @@ interface BaseNode {
 
 // MARK: fake
 
+// base node
 export interface RootNode extends BaseNode {
   type: 'Root'
   block: AstNode[]
-  isRoot: boolean
 }
 
 export interface BlockNode extends BaseNode {
@@ -52,7 +52,7 @@ export interface NewlineNode extends BaseNode {
 
 export interface LetStatement extends BaseNode {
   type: 'LetStatement'
-  identifier: IdentifierNode | AssignmentNode
+  identifier: IdentifierNode
   value: AstExpressionNode | null
 }
 

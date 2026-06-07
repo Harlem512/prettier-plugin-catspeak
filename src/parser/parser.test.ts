@@ -30,9 +30,7 @@ function parse(
   const input = Array.isArray(str) ? str.join('\n') : str
   const p = baseParse(input, { includePlaceholders: true })
   expect(p.errors).toHaveLength(errorLength)
-  const block = node<RootNode>(p.ast, 'Root', 0, input.length, {
-    isRoot: true,
-  })
+  const block = node<RootNode>(p.ast, 'Root', 0, input.length)
   expect(
     // filter out comment placeholder node
     block.block.filter(({ type }) => type !== 'CommentPlaceholder'),

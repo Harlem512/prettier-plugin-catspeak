@@ -3,7 +3,7 @@
   "displayName": "A Prettier Formatter for Catspeak",
   "description": "A code formatter (and syntax highlighter) for Catspeak built with Prettier",
   "publisher": "Harlem512",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "engines": {
     "vscode": "^1.120.0"
   },
@@ -43,6 +43,7 @@
     "esbuild": "^0.28.0",
     "typescript": "^5.9.3"
   },
+  "icon": "./assets/catspeak-icon.png",
   "contributes": {
     "languages": [
       {
@@ -59,8 +60,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./icons/catspeak-logo-light.svg",
-          "dark": "./icons/catspeak-logo-dark.svg"
+          "light": "./assets/catspeak-icon.png",
+          "dark": "./assets/catspeak-icon-dark.png"
         }
       }
     ],

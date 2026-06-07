@@ -5,3 +5,4 @@ out/
 src/
 tsconfig.json
 esbuild.cjs
+assets/catspeak-small.png
